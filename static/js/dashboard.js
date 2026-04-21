@@ -138,6 +138,12 @@ function renderTabla(pedidos) {
           ${opcionesEstado(p.estado)}
         </select>
       </td>
+      <td class="td-pagado">
+        <button class="btn-pagado ${p.pagado ? 'pagado' : 'no-pagado'}"
+                data-id="${p.id}" onclick="togglePagado(${p.id}, ${!p.pagado}, this)">
+          ${p.pagado ? 'Pagado' : 'Pendiente'}
+        </button>
+      </td>
       <td class="td-acciones">
         <a href="/pedidos/${p.id}/editar" class="btn-icon btn-edit" title="Editar">✏️</a>
         <button class="btn-icon btn-delete ${p.estado !== 'Pendiente' ? 'disabled' : ''}"
@@ -207,6 +213,24 @@ async function cambiarEstado(id, nuevoEstado, selectEl) {
   } catch (err) {
     mostrarToast('Error de red.', 'error');
   }
+}
+
+// ── Cambiar estado de pago ────────────────────────────────────────────────────
+async function togglePagado(id, nuevoPagado, btn) {
+  try {
+    const resp = await fetch(`/api/pedidos/${id}/pagado`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pagado: nuevoPagado }),
+    });
+    if (!resp.ok) { mostrarToast('Error al actualizar pago.', 'error'); return; }
+    btn.textContent = nuevoPagado ? 'Pagado' : 'Pendiente';
+    btn.className = `btn-pagado ${nuevoPagado ? 'pagado' : 'no-pagado'}`;
+    btn.onclick = () => togglePagado(id, !nuevoPagado, btn);
+    const idx = pedidosCached.findIndex(p => p.id === id);
+    if (idx !== -1) pedidosCached[idx].pagado = nuevoPagado;
+    mostrarToast(nuevoPagado ? 'Marcado como pagado.' : 'Marcado como pendiente.', 'success');
+  } catch { mostrarToast('Error de red.', 'error'); }
 }
 
 // ── Eliminar pedido ───────────────────────────────────────────────────────────

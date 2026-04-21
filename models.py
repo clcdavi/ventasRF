@@ -42,13 +42,18 @@ def init_db():
         horario_entrega              TEXT,
         notas                        TEXT,
         estado                       TEXT NOT NULL DEFAULT 'Pendiente',
+        pagado                       BOOLEAN NOT NULL DEFAULT FALSE,
         fecha_actualizacion          TIMESTAMP NOT NULL DEFAULT NOW()
     );
+    """
+    alter = """
+    ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE;
     """
     conn = get_db()
     try:
         with conn.cursor() as cur:
             cur.execute(ddl)
+            cur.execute(alter)
         conn.commit()
     finally:
         conn.close()
@@ -66,12 +71,14 @@ def create_pedido(data):
     qty_membrillo = int(data.get('cantidad_pastelito_membrillo', 0))
     monto_total   = calcular_total(qty_locro, qty_batata, qty_membrillo)
 
+    pagado = data.get('pagado') in (True, 'true', '1', 'on')
+
     sql = """
     INSERT INTO pedidos
         (nombre_cliente, telefono, email, direccion,
          cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
-         medio_pago, monto_total, horario_entrega, notas)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         medio_pago, monto_total, horario_entrega, notas, pagado)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING id
     """
     params = (
@@ -84,6 +91,7 @@ def create_pedido(data):
         monto_total,
         data.get('horario_entrega', '').strip() or None,
         data.get('notas', '').strip() or None,
+        pagado,
     )
     conn = get_db()
     try:
@@ -129,6 +137,20 @@ def get_pedido_by_id(pedido_id):
         conn.close()
 
 
+def update_pagado(pedido_id, pagado):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pedidos SET pagado = %s, fecha_actualizacion = NOW() WHERE id = %s",
+                (pagado, pedido_id)
+            )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
 def update_estado(pedido_id, nuevo_estado):
     if nuevo_estado not in ESTADOS:
         raise ValueError(f"Estado inválido: {nuevo_estado}")
@@ -153,12 +175,14 @@ def update_pedido(pedido_id, data):
     qty_membrillo = int(data.get('cantidad_pastelito_membrillo', 0))
     monto_total   = calcular_total(qty_locro, qty_batata, qty_membrillo)
 
+    pagado = data.get('pagado') in (True, 'true', '1', 'on')
+
     sql = """
     UPDATE pedidos SET
         nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
         cantidad_locro = %s, cantidad_pastelito_batata = %s, cantidad_pastelito_membrillo = %s,
         medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
-        estado = %s, fecha_actualizacion = NOW()
+        estado = %s, pagado = %s, fecha_actualizacion = NOW()
     WHERE id = %s
     """
     params = (
@@ -172,6 +196,7 @@ def update_pedido(pedido_id, data):
         data.get('horario_entrega', '').strip() or None,
         data.get('notas', '').strip() or None,
         data['estado'],
+        pagado,
         pedido_id,
     )
     conn = get_db()

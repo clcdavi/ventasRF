@@ -117,6 +117,17 @@ def detalle_pedido(pedido_id):
     return jsonify(pedido)
 
 
+@app.route('/api/pedidos/<int:pedido_id>/pagado', methods=['PUT'])
+def cambiar_pagado(pedido_id):
+    data = request.get_json()
+    if not data or 'pagado' not in data:
+        return jsonify({'error': 'Falta el campo pagado.'}), 400
+    ok = models.update_pagado(pedido_id, bool(data['pagado']))
+    if not ok:
+        return jsonify({'error': 'Pedido no encontrado.'}), 404
+    return jsonify({'ok': True, 'pagado': data['pagado']})
+
+
 @app.route('/api/pedidos/<int:pedido_id>/estado', methods=['PUT'])
 def cambiar_estado(pedido_id):
     data = request.get_json()

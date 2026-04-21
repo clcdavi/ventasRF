@@ -141,6 +141,18 @@
     </div>
   </section>
 
+  <!-- ── Estado de pago ── -->
+  <section class="form-section">
+    <h2 class="section-title">Estado del pago</h2>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="pagado" value="true"
+               {% if pedido.pagado %}checked{% endif %} />
+        El cliente ya pagó
+      </label>
+    </div>
+  </section>
+
   <!-- ── Notas ── -->
   <section class="form-section">
     <h2 class="section-title">Notas especiales <span class="opcional">(opcional)</span></h2>

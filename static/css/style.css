@@ -183,6 +183,30 @@ a:hover { text-decoration: underline; }
 .btn-icon:hover { background: var(--bg); }
 .btn-icon.disabled { opacity: .35; cursor: not-allowed; }
 
+/* ── Botón de estado de pago ─────────────────────────────────────────────── */
+.btn-pagado {
+  border: none;
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  transition: opacity .12s;
+}
+.btn-pagado:hover { opacity: .8; }
+.btn-pagado.pagado    { background: #DCFCE7; color: #16A34A; }
+.btn-pagado.no-pagado { background: #FEF3C7; color: #B45309; }
+
+/* ── Checkbox label ──────────────────────────────────────────────────────── */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  cursor: pointer;
+  font-size: .95rem;
+}
+.checkbox-label input[type="checkbox"] { width: 1rem; height: 1rem; cursor: pointer; }
+
 /* ── Banners ──────────────────────────────────────────────────────────────── */
 .banner {
   padding: .9rem 1.25rem;
