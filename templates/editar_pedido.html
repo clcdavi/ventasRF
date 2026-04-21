@@ -66,32 +66,32 @@
         <span class="subtotal" id="sub-locro">$0</span>
       </div>
 
-      <div class="producto-item">
-        <label for="cantidad_pastelito_batata">
-          Pastelitos de Batata
-          <span class="precio-hint">$4.000/media docena</span>
+      <div class="producto-item producto-item--wide">
+        <label>
+          Pastelitos
+          <span class="precio-hint" id="hint-pastelito">$4.000 cada 6 unidades (media docena)</span>
         </label>
-        <div class="qty-input-wrap">
-          <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="-1">−</button>
-          <input type="number" id="cantidad_pastelito_batata" name="cantidad_pastelito_batata"
-                 value="{{ pedido.cantidad_pastelito_batata }}" min="0" class="qty-input" />
-          <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="1">+</button>
+        <div class="pastelitos-grid">
+          <div class="sabor-row">
+            <span class="sabor-label">Batata</span>
+            <div class="qty-input-wrap">
+              <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="-1">−</button>
+              <input type="number" id="cantidad_pastelito_batata" name="cantidad_pastelito_batata"
+                     value="{{ pedido.cantidad_pastelito_batata }}" min="0" class="qty-input" />
+              <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="1">+</button>
+            </div>
+          </div>
+          <div class="sabor-row">
+            <span class="sabor-label">Membrillo</span>
+            <div class="qty-input-wrap">
+              <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="-1">−</button>
+              <input type="number" id="cantidad_pastelito_membrillo" name="cantidad_pastelito_membrillo"
+                     value="{{ pedido.cantidad_pastelito_membrillo }}" min="0" class="qty-input" />
+              <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="1">+</button>
+            </div>
+          </div>
         </div>
-        <span class="subtotal" id="sub-batata">$0</span>
-      </div>
-
-      <div class="producto-item">
-        <label for="cantidad_pastelito_membrillo">
-          Pastelitos de Membrillo
-          <span class="precio-hint">$4.000/media docena</span>
-        </label>
-        <div class="qty-input-wrap">
-          <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="-1">−</button>
-          <input type="number" id="cantidad_pastelito_membrillo" name="cantidad_pastelito_membrillo"
-                 value="{{ pedido.cantidad_pastelito_membrillo }}" min="0" class="qty-input" />
-          <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="1">+</button>
-        </div>
-        <span class="subtotal" id="sub-membrillo">$0</span>
+        <span class="subtotal" id="sub-pastelitos">$0</span>
       </div>
 
     </div>

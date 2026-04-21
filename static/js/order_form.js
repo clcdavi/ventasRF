@@ -36,7 +36,8 @@ function fmt(n) {
 // ── Cálculo del total ────────────────────────────────────────────────────────
 function calcularTotal(qLocro, qBatata, qMembrillo) {
   const totalLocro      = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
-  const totalPastelitos = (qBatata + qMembrillo) * PRECIO_PASTELITO_MEDIA_DOCENA;
+  const totalUnidades   = qBatata + qMembrillo;
+  const totalPastelitos = totalUnidades > 0 ? Math.ceil(totalUnidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA : 0;
   return totalLocro + totalPastelitos;
 }
 
@@ -45,24 +46,34 @@ function recalcular() {
   const qBatata    = parseInt(document.getElementById('cantidad_pastelito_batata')?.value)    || 0;
   const qMembrillo = parseInt(document.getElementById('cantidad_pastelito_membrillo')?.value) || 0;
 
-  // Subtotales por producto
-  const subLocro     = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
-  const subBatata    = qBatata * PRECIO_PASTELITO_MEDIA_DOCENA;
-  const subMembrillo = qMembrillo * PRECIO_PASTELITO_MEDIA_DOCENA;
+  const subLocro       = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
+  const totalUnidades  = qBatata + qMembrillo;
+  const subPastelitos  = totalUnidades > 0 ? Math.ceil(totalUnidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA : 0;
+  const mediaDocenas   = Math.ceil(totalUnidades / 6);
+  const subBatata      = 0;
+  const subMembrillo   = 0;
 
-  const subLocroEl     = document.getElementById('sub-locro');
-  const subBataEl      = document.getElementById('sub-batata');
-  const subMembrEl     = document.getElementById('sub-membrillo');
-  if (subLocroEl)  subLocroEl.textContent  = `$${fmt(subLocro)}`;
-  if (subBataEl)   subBataEl.textContent   = `$${fmt(subBatata)}`;
-  if (subMembrEl)  subMembrEl.textContent  = `$${fmt(subMembrillo)}`;
+  const subLocroEl  = document.getElementById('sub-locro');
+  const subPastEl   = document.getElementById('sub-pastelitos');
+  if (subLocroEl) subLocroEl.textContent = `$${fmt(subLocro)}`;
+  if (subPastEl) {
+    if (totalUnidades > 0) {
+      const resto = totalUnidades % 6;
+      const hint  = resto === 0
+        ? `${mediaDocenas} media${mediaDocenas > 1 ? 's' : ''} docena${mediaDocenas > 1 ? 's' : ''} · $${fmt(subPastelitos)}`
+        : `${totalUnidades} ud · ${mediaDocenas} ½doc (faltan ${6 - resto} para completar) · $${fmt(subPastelitos)}`;
+      subPastEl.textContent = hint;
+    } else {
+      subPastEl.textContent = '$0';
+    }
+  }
 
-  const total = subLocro + subBatata + subMembrillo;
+  const total = subLocro + subPastelitos;
   if (totalElem) totalElem.textContent = `$${fmt(total)}`;
 
   // Habilitar submit solo si hay al menos un producto
   if (btnSubmit) {
-    btnSubmit.disabled = (qLocro + qBatata + qMembrillo === 0);
+    btnSubmit.disabled = (qLocro + totalUnidades === 0);
   }
 }
 

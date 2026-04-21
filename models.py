@@ -60,8 +60,10 @@ def init_db():
 
 
 def calcular_total(qty_locro, qty_batata, qty_membrillo):
+    import math
     total_locro = (qty_locro // 2) * PRECIO_LOCRO_COMBO + (qty_locro % 2) * PRECIO_LOCRO_UNITARIO
-    total_pastelitos = (qty_batata + qty_membrillo) * PRECIO_PASTELITO_MEDIA_DOCENA
+    total_unidades = qty_batata + qty_membrillo
+    total_pastelitos = math.ceil(total_unidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA if total_unidades > 0 else 0
     return total_locro + total_pastelitos
 
 

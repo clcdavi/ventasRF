@@ -183,6 +183,29 @@ a:hover { text-decoration: underline; }
 .btn-icon:hover { background: var(--bg); }
 .btn-icon.disabled { opacity: .35; cursor: not-allowed; }
 
+/* ── Pastelitos por sabor ────────────────────────────────────────────────── */
+.producto-item--wide { grid-column: span 2; }
+
+.pastelitos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .4rem;
+}
+
+.sabor-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.sabor-label {
+  width: 80px;
+  font-size: .9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* ── Botón de estado de pago ─────────────────────────────────────────────── */
 .btn-pagado {
   border: none;
