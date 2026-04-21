@@ -12,7 +12,7 @@ let pedidosCached = [];
 function fmtFecha(str) {
   if (!str) return '—';
   const [fecha, hora] = str.split(' ');
-  const [y, m, d] = fecha.split('-');
+  const [, m, d] = fecha.split('-');
   return `${d}/${m} ${hora ? hora.slice(0, 5) : ''}`;
 }
 
@@ -253,6 +253,7 @@ async function togglePagado(id, nuevoPagado, btn) {
     const idx = pedidosCached.findIndex(p => p.id === id);
     if (idx !== -1) pedidosCached[idx].pagado = nuevoPagado;
     mostrarToast(nuevoPagado ? 'Marcado como pagado.' : 'Marcado como pendiente.', 'success');
+    cargarStats();
   } catch { mostrarToast('Error de red.', 'error'); }
 }
 

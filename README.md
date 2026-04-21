@@ -5,7 +5,7 @@ Sistema de gestión de pedidos para la venta de locro y pastelitos el 1ro de may
 ## Stack
 
 - **Backend:** Python + Flask
-- **Base de datos:** PostgreSQL (Render) / SQLite (local)
+- **Base de datos:** PostgreSQL (Render) / local con `.env`
 - **Frontend:** HTML / CSS / Vanilla JS
 - **Deploy:** Render (web service + PostgreSQL free tier)
 
@@ -15,7 +15,7 @@ Sistema de gestión de pedidos para la venta de locro y pastelitos el 1ro de may
 pip install -r requirements.txt
 ```
 
-Crear un archivo `.env` con la variable de conexión a la base de datos:
+Crear un archivo `.env` con la variable de conexión:
 
 ```
 DATABASE_URL=postgresql://usuario:password@host:5432/nombre_db
@@ -29,6 +29,12 @@ TZ=America/Argentina/Buenos_Aires python3 app.py
 
 Abrir en el navegador: http://localhost:8080
 
+## Deploy (Render)
+
+La app está disponible en: https://ventasrf.onrender.com
+
+El deploy se actualiza automáticamente con cada push a `main`.
+
 ## Precios
 
 | Producto | Precio |
@@ -41,10 +47,12 @@ Abrir en el navegador: http://localhost:8080
 
 - Cargar nuevos pedidos con datos del cliente, productos y medio de pago
 - Pastelitos por unidad con mezcla de sabores (batata / membrillo) — precio cada 6 unidades
-- Dashboard con tabla de pedidos, filtros por estado / pago / fecha y estadísticas
+- Dashboard sin scroll: tabla con scroll interno, stats colapsables con botón 📊
+- Tarjeta **Cobrado** que suma solo los pedidos marcados como pagados
 - Cambio de estado por pedido: Pendiente → En preparación → En envío → Entregado
-- Estado de pago independiente (Pagado / Pendiente) por pedido
+- Estado de pago independiente (Pagado / Pendiente) con actualización inmediata de la card Cobrado
+- Filtros por estado, medio de pago y fecha
 - Edición completa de cualquier pedido
 - Eliminación de pedidos en estado Pendiente
 - Exportar pedidos a Excel con filtros aplicados (incluye columna Pagado)
-- Fechas de pedido visibles en la tabla del dashboard
+- Fechas de pedido visibles en la tabla
