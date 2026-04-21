@@ -158,9 +158,29 @@ function renderTabla(pedidos) {
 
 function resumenProductos(p) {
   const partes = [];
-  if (p.cantidad_locro > 0)               partes.push(`${p.cantidad_locro} locro`);
-  if (p.cantidad_pastelito_batata > 0)    partes.push(`${p.cantidad_pastelito_batata} ½doc batata`);
-  if (p.cantidad_pastelito_membrillo > 0) partes.push(`${p.cantidad_pastelito_membrillo} ½doc memb.`);
+
+  if (p.cantidad_locro > 0) {
+    const combos = Math.floor(p.cantidad_locro / 2);
+    const sueltos = p.cantidad_locro % 2;
+    let locroStr = '';
+    if (combos > 0)  locroStr += `${combos} combo${combos > 1 ? 's' : ''} locro`;
+    if (sueltos > 0) locroStr += (locroStr ? ' + ' : '') + `${sueltos} locro`;
+    partes.push(locroStr);
+  }
+
+  const bat  = p.cantidad_pastelito_batata    || 0;
+  const memb = p.cantidad_pastelito_membrillo || 0;
+  const totalUnid = bat + memb;
+  if (totalUnid > 0) {
+    const mediaDoc = Math.ceil(totalUnid / 6);
+    let pastStr = `${mediaDoc} ½doc pastelitos`;
+    const detalle = [];
+    if (bat  > 0) detalle.push(`${bat} bat.`);
+    if (memb > 0) detalle.push(`${memb} memb.`);
+    pastStr += `<br><span class="prod-detalle">${detalle.join(' + ')}</span>`;
+    partes.push(pastStr);
+  }
+
   return partes.join('<br>') || '—';
 }
 

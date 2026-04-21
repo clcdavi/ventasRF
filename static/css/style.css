@@ -199,6 +199,11 @@ a:hover { text-decoration: underline; }
   gap: .75rem;
 }
 
+.prod-detalle {
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
 .sabor-label {
   width: 80px;
   font-size: .9rem;
