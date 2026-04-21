@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Pedido — VentasRF{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Nuevo Pedido</h1>
+</div>
+
+<!-- Banner de éxito (oculto por defecto) -->
+<div id="banner-exito" class="banner banner-success hidden">
+  <strong>Pedido creado.</strong> ID: <span id="pedido-id-exito"></span>
+  &nbsp;—&nbsp;
+  <a href="/nuevo-pedido" class="banner-link">Crear otro pedido</a>
+  &nbsp;|&nbsp;
+  <a href="/dashboard" class="banner-link">Ver dashboard</a>
+</div>
+
+<!-- Banner de error -->
+<div id="banner-error" class="banner banner-error hidden">
+  <strong>Error:</strong> <span id="error-msg"></span>
+</div>
+
+<form id="form-pedido" class="form-card" novalidate>
+
+  <!-- ── Sección Cliente ── -->
+  <section class="form-section">
+    <h2 class="section-title">Datos del cliente</h2>
+
+    <div class="form-group">
+      <label for="nombre_cliente">Nombre completo <span class="req">*</span></label>
+      <input type="text" id="nombre_cliente" name="nombre_cliente" autocomplete="off" required />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="telefono">Teléfono <span class="req">*</span></label>
+        <input type="tel" id="telefono" name="telefono" autocomplete="off" required />
+      </div>
+      <div class="form-group">
+        <label for="email">Email <span class="opcional">(opcional)</span></label>
+        <input type="email" id="email" name="email" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="direccion">Dirección completa <span class="req">*</span></label>
+      <textarea id="direccion" name="direccion" rows="2" required></textarea>
+    </div>
+  </section>
+
+  <!-- ── Sección Pedido ── -->
+  <section class="form-section">
+    <h2 class="section-title">Productos</h2>
+    <p class="section-hint">Locro en porciones · Pastelitos en docenas</p>
+
+    <div class="productos-grid">
+
+      <div class="producto-item">
+        <label for="cantidad_locro">
+          Locro
+          <span class="precio-hint" id="hint-locro">$12.000/porción · combo 2 = $20.000</span>
+        </label>
+        <div class="qty-input-wrap">
+          <button type="button" class="qty-btn" data-target="cantidad_locro" data-delta="-1">−</button>
+          <input type="number" id="cantidad_locro" name="cantidad_locro" value="0" min="0" class="qty-input" />
+          <button type="button" class="qty-btn" data-target="cantidad_locro" data-delta="1">+</button>
+        </div>
+        <span class="subtotal" id="sub-locro">$0</span>
+      </div>
+
+      <div class="producto-item">
+        <label for="cantidad_pastelito_batata">
+          Pastelitos de Batata
+          <span class="precio-hint" id="hint-pastelito">$8.000/docena</span>
+        </label>
+        <div class="qty-input-wrap">
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="-1">−</button>
+          <input type="number" id="cantidad_pastelito_batata" name="cantidad_pastelito_batata" value="0" min="0" class="qty-input" />
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="1">+</button>
+        </div>
+        <span class="subtotal" id="sub-batata">$0</span>
+      </div>
+
+      <div class="producto-item">
+        <label for="cantidad_pastelito_membrillo">
+          Pastelitos de Membrillo
+          <span class="precio-hint">$8.000/docena</span>
+        </label>
+        <div class="qty-input-wrap">
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="-1">−</button>
+          <input type="number" id="cantidad_pastelito_membrillo" name="cantidad_pastelito_membrillo" value="0" min="0" class="qty-input" />
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="1">+</button>
+        </div>
+        <span class="subtotal" id="sub-membrillo">$0</span>
+      </div>
+
+    </div>
+
+    <!-- Total en vivo -->
+    <div class="total-box">
+      <span class="total-label">TOTAL</span>
+      <span class="total-amount" id="total-display">$0</span>
+    </div>
+  </section>
+
+  <!-- ── Sección Entrega ── -->
+  <section class="form-section">
+    <h2 class="section-title">Entrega y pago</h2>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="horario_entrega">Horario preferido <span class="opcional">(opcional)</span></label>
+        <input type="text" id="horario_entrega" name="horario_entrega" placeholder="Ej: 12:00 - 13:00" />
+      </div>
+      <div class="form-group">
+        <label>Medio de pago <span class="req">*</span></label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="medio_pago" value="efectivo" required /> Efectivo
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="medio_pago" value="transferencia" /> Transferencia
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="medio_pago" value="tarjeta" /> Tarjeta
+          </label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Sección Notas ── -->
+  <section class="form-section">
+    <h2 class="section-title">Notas especiales <span class="opcional">(opcional)</span></h2>
+    <div class="form-group">
+      <textarea id="notas" name="notas" rows="2" placeholder="Alergias, instrucciones de entrega, etc."></textarea>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button type="submit" id="btn-submit" class="btn-primary btn-lg" disabled>
+      Confirmar pedido
+    </button>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/order_form.js') }}"></script>
+{% endblock %}

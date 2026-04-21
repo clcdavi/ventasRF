@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Editar Pedido #{{ pedido.id }} — VentasRF{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="/dashboard" class="btn-back">← Volver al dashboard</a>
+  <h1>Editar Pedido #{{ pedido.id }}</h1>
+</div>
+
+<div id="banner-exito" class="banner banner-success hidden">
+  <strong>Pedido actualizado.</strong>
+  &nbsp;—&nbsp;
+  <a href="/dashboard" class="banner-link">Ver dashboard</a>
+</div>
+<div id="banner-error" class="banner banner-error hidden">
+  <strong>Error:</strong> <span id="error-msg"></span>
+</div>
+
+<form id="form-pedido" class="form-card" data-pedido-id="{{ pedido.id }}" data-modo="editar" novalidate>
+
+  <!-- ── Sección Cliente ── -->
+  <section class="form-section">
+    <h2 class="section-title">Datos del cliente</h2>
+
+    <div class="form-group">
+      <label for="nombre_cliente">Nombre completo <span class="req">*</span></label>
+      <input type="text" id="nombre_cliente" name="nombre_cliente"
+             value="{{ pedido.nombre_cliente }}" required />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="telefono">Teléfono <span class="req">*</span></label>
+        <input type="tel" id="telefono" name="telefono" value="{{ pedido.telefono }}" required />
+      </div>
+      <div class="form-group">
+        <label for="email">Email <span class="opcional">(opcional)</span></label>
+        <input type="email" id="email" name="email" value="{{ pedido.email or '' }}" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="direccion">Dirección completa <span class="req">*</span></label>
+      <textarea id="direccion" name="direccion" rows="2" required>{{ pedido.direccion }}</textarea>
+    </div>
+  </section>
+
+  <!-- ── Sección Productos ── -->
+  <section class="form-section">
+    <h2 class="section-title">Productos</h2>
+    <p class="section-hint">Locro en porciones · Pastelitos en docenas</p>
+
+    <div class="productos-grid">
+
+      <div class="producto-item">
+        <label for="cantidad_locro">
+          Locro
+          <span class="precio-hint">$12.000/porción · combo 2 = $20.000</span>
+        </label>
+        <div class="qty-input-wrap">
+          <button type="button" class="qty-btn" data-target="cantidad_locro" data-delta="-1">−</button>
+          <input type="number" id="cantidad_locro" name="cantidad_locro"
+                 value="{{ pedido.cantidad_locro }}" min="0" class="qty-input" />
+          <button type="button" class="qty-btn" data-target="cantidad_locro" data-delta="1">+</button>
+        </div>
+        <span class="subtotal" id="sub-locro">$0</span>
+      </div>
+
+      <div class="producto-item">
+        <label for="cantidad_pastelito_batata">
+          Pastelitos de Batata
+          <span class="precio-hint">$8.000/docena</span>
+        </label>
+        <div class="qty-input-wrap">
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="-1">−</button>
+          <input type="number" id="cantidad_pastelito_batata" name="cantidad_pastelito_batata"
+                 value="{{ pedido.cantidad_pastelito_batata }}" min="0" class="qty-input" />
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="1">+</button>
+        </div>
+        <span class="subtotal" id="sub-batata">$0</span>
+      </div>
+
+      <div class="producto-item">
+        <label for="cantidad_pastelito_membrillo">
+          Pastelitos de Membrillo
+          <span class="precio-hint">$8.000/docena</span>
+        </label>
+        <div class="qty-input-wrap">
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="-1">−</button>
+          <input type="number" id="cantidad_pastelito_membrillo" name="cantidad_pastelito_membrillo"
+                 value="{{ pedido.cantidad_pastelito_membrillo }}" min="0" class="qty-input" />
+          <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="1">+</button>
+        </div>
+        <span class="subtotal" id="sub-membrillo">$0</span>
+      </div>
+
+    </div>
+
+    <div class="total-box">
+      <span class="total-label">TOTAL</span>
+      <span class="total-amount" id="total-display">$0</span>
+    </div>
+  </section>
+
+  <!-- ── Sección Entrega ── -->
+  <section class="form-section">
+    <h2 class="section-title">Entrega y pago</h2>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="horario_entrega">Horario preferido <span class="opcional">(opcional)</span></label>
+        <input type="text" id="horario_entrega" name="horario_entrega"
+               value="{{ pedido.horario_entrega or '' }}" placeholder="Ej: 12:00 - 13:00" />
+      </div>
+      <div class="form-group">
+        <label>Medio de pago <span class="req">*</span></label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="medio_pago" value="efectivo"
+              {% if pedido.medio_pago == 'efectivo' %}checked{% endif %} required /> Efectivo
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="medio_pago" value="transferencia"
+              {% if pedido.medio_pago == 'transferencia' %}checked{% endif %} /> Transferencia
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="medio_pago" value="tarjeta"
+              {% if pedido.medio_pago == 'tarjeta' %}checked{% endif %} /> Tarjeta
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="estado">Estado del pedido</label>
+      <select id="estado" name="estado" class="select-estado">
+        {% for e in estados %}
+        <option value="{{ e }}" {% if pedido.estado == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </section>
+
+  <!-- ── Notas ── -->
+  <section class="form-section">
+    <h2 class="section-title">Notas especiales <span class="opcional">(opcional)</span></h2>
+    <div class="form-group">
+      <textarea id="notas" name="notas" rows="2">{{ pedido.notas or '' }}</textarea>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <a href="/dashboard" class="btn-secondary">Cancelar</a>
+    <button type="submit" id="btn-submit" class="btn-primary btn-lg">
+      Guardar cambios
+    </button>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/order_form.js') }}"></script>
+{% endblock %}

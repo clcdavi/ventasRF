@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — VentasRF{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Dashboard de Ventas</h1>
+  <button id="btn-refresh" class="btn-secondary btn-sm">↻ Actualizar</button>
+</div>
+
+<!-- ── Tarjetas resumen ── -->
+<div class="cards-grid" id="cards-resumen">
+  <div class="card">
+    <div class="card-label">Total pedidos</div>
+    <div class="card-value" id="stat-total-pedidos">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Ingresos totales</div>
+    <div class="card-value" id="stat-ingresos">—</div>
+  </div>
+  <div class="card card-warning">
+    <div class="card-label">Pendientes</div>
+    <div class="card-value" id="stat-pendientes">—</div>
+  </div>
+  <div class="card card-success">
+    <div class="card-label">Entregados</div>
+    <div class="card-value" id="stat-entregados">—</div>
+  </div>
+</div>
+
+<!-- ── Filtros ── -->
+<div class="filters-bar">
+  <select id="filtro-estado" class="filter-select">
+    <option value="">Todos los estados</option>
+    <option value="Pendiente">Pendiente</option>
+    <option value="En preparación">En preparación</option>
+    <option value="En envío">En envío</option>
+    <option value="Entregado">Entregado</option>
+  </select>
+
+  <select id="filtro-pago" class="filter-select">
+    <option value="">Todos los pagos</option>
+    <option value="efectivo">Efectivo</option>
+    <option value="transferencia">Transferencia</option>
+    <option value="tarjeta">Tarjeta</option>
+  </select>
+
+  <input type="date" id="filtro-fecha" class="filter-input" />
+
+  <button id="btn-limpiar" class="btn-secondary btn-sm">✕ Limpiar filtros</button>
+  <button id="btn-exportar" class="btn-secondary btn-sm">↓ Exportar Excel</button>
+</div>
+
+<!-- ── Tabla de pedidos ── -->
+<div class="table-wrap">
+  <table class="tabla-pedidos" id="tabla-pedidos">
+    <thead>
+      <tr>
+        <th class="sortable" data-col="id">ID ↕</th>
+        <th class="sortable" data-col="fecha_pedido">Fecha ↕</th>
+        <th class="sortable" data-col="nombre_cliente">Cliente ↕</th>
+        <th>Dirección</th>
+        <th>Productos</th>
+        <th class="sortable" data-col="monto_total">Total ↕</th>
+        <th>Pago</th>
+        <th>Horario</th>
+        <th class="sortable" data-col="estado">Estado ↕</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tbody-pedidos">
+      <!-- poblado por dashboard.js -->
+    </tbody>
+  </table>
+
+  <!-- Estado vacío -->
+  <div id="empty-state" class="empty-state hidden">
+    <p>No hay pedidos aún.</p>
+    <a href="/nuevo-pedido" class="btn-primary">Crear primer pedido</a>
+  </div>
+</div>
+
+<!-- ── Panel de estadísticas ── -->
+<div class="stats-panel">
+  <h2 class="section-title">Estadísticas</h2>
+
+  <div class="stats-grid">
+
+    <div class="stat-block">
+      <h3>Unidades vendidas</h3>
+      <div class="stat-row">
+        <span class="stat-name">Locro (porciones)</span>
+        <div class="bar-wrap">
+          <div class="bar" id="bar-locro" style="width:0%"></div>
+        </div>
+        <span class="stat-val" id="val-locro">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name">Pastelitos Batata (doc)</span>
+        <div class="bar-wrap">
+          <div class="bar bar-gold" id="bar-batata" style="width:0%"></div>
+        </div>
+        <span class="stat-val" id="val-batata">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name">Pastelitos Membrillo (doc)</span>
+        <div class="bar-wrap">
+          <div class="bar bar-gold" id="bar-membrillo" style="width:0%"></div>
+        </div>
+        <span class="stat-val" id="val-membrillo">0</span>
+      </div>
+    </div>
+
+    <div class="stat-block">
+      <h3>Ingresos por medio de pago</h3>
+      <div class="stat-row">
+        <span class="stat-name">Efectivo</span>
+        <div class="bar-wrap">
+          <div class="bar bar-green" id="bar-efectivo" style="width:0%"></div>
+        </div>
+        <span class="stat-val" id="val-efectivo">$0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name">Transferencia</span>
+        <div class="bar-wrap">
+          <div class="bar bar-blue" id="bar-transferencia" style="width:0%"></div>
+        </div>
+        <span class="stat-val" id="val-transferencia">$0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name">Tarjeta</span>
+        <div class="bar-wrap">
+          <div class="bar bar-purple" id="bar-tarjeta" style="width:0%"></div>
+        </div>
+        <span class="stat-val" id="val-tarjeta">$0</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Toast de feedback ── -->
+<div id="toast" class="toast hidden"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
