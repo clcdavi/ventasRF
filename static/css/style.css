@@ -492,6 +492,47 @@ textarea { resize: vertical; min-height: 64px; }
   color: var(--text);
 }
 
+/* ── Dashboard sin scroll ────────────────────────────────────────────────── */
+.page-dashboard { height: 100vh; overflow: hidden; }
+
+.page-dashboard .main-content {
+  height: calc(100vh - 52px - 38px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-top { flex-shrink: 0; }
+.dashboard-top .page-header  { margin-bottom: .75rem; }
+.dashboard-top .cards-grid   { margin-bottom: .75rem; }
+.dashboard-top .filters-bar  { margin-bottom: .5rem; }
+
+.table-section {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--card-bg);
+}
+
+.stats-panel {
+  flex-shrink: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+  padding: .75rem 0 0;
+}
+
 /* ── Tabla ────────────────────────────────────────────────────────────────── */
 .table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
 
@@ -584,10 +625,7 @@ textarea { resize: vertical; min-height: 64px; }
 /* ── Stats panel ──────────────────────────────────────────────────────────── */
 .stats-panel {
   background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.25rem;
-  margin-bottom: 2rem;
+  padding: .75rem 1.25rem 1rem;
 }
 
 .stats-grid {

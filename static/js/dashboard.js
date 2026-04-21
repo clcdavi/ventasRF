@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-refresh')?.addEventListener('click', cargarTodo);
   document.getElementById('btn-limpiar')?.addEventListener('click', limpiarFiltros);
   document.getElementById('btn-exportar')?.addEventListener('click', exportarExcel);
+  document.getElementById('btn-toggle-stats')?.addEventListener('click', () => {
+    document.getElementById('stats-panel')?.classList.toggle('hidden');
+  });
 
   // Filtros: re-fetch al cambiar
   ['filtro-estado', 'filtro-pago', 'filtro-fecha'].forEach(id => {
@@ -277,7 +280,7 @@ async function cargarStats() {
 
     // Tarjetas resumen
     setText('stat-total-pedidos', s.total_pedidos);
-    setText('stat-ingresos', `$${fmt(s.ingresos_totales)}`);
+    setText('stat-ingresos', `$${fmt(s.ingresos_totales)}`); // solo pagados
     setText('stat-pendientes', s.por_estado?.['Pendiente'] || 0);
     setText('stat-entregados', s.por_estado?.['Entregado'] || 0);
 

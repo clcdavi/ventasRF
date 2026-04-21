@@ -6,7 +6,7 @@
   <title>{% block title %}VentasRF — 1ro de Mayo{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 
   <!-- Navbar -->
   <nav class="navbar">
@@ -39,7 +39,7 @@
     // Carga los precios en el footer una sola vez
     fetch('/api/precios').then(r => r.json()).then(p => {
       document.getElementById('footer-precios').textContent =
-        `Locro: $${p.locro_unitario.toLocaleString('es-AR')} | Combo 2 locros: $${p.locro_combo.toLocaleString('es-AR')} | Pastelitos (docena): $${p.pastelito_docena.toLocaleString('es-AR')}`;
+        `Locro: $${p.locro_unitario.toLocaleString('es-AR')} | Combo 2 locros: $${p.locro_combo.toLocaleString('es-AR')} | Pastelitos: $${p.pastelito_media_docena.toLocaleString('es-AR')} cada 6 ud`;
     });
   </script>
 

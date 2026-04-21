@@ -235,7 +235,7 @@ def get_stats():
                     COALESCE(SUM(cantidad_locro), 0) as total_locro,
                     COALESCE(SUM(cantidad_pastelito_batata), 0) as total_batata,
                     COALESCE(SUM(cantidad_pastelito_membrillo), 0) as total_membrillo,
-                    COALESCE(SUM(monto_total), 0) as ingresos_totales,
+                    COALESCE(SUM(CASE WHEN pagado THEN monto_total ELSE 0 END), 0) as ingresos_totales,
                     COUNT(*) as total_pedidos
                 FROM pedidos
             """)
