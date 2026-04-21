@@ -47,12 +47,14 @@ El deploy se actualiza automáticamente con cada push a `main`.
 
 - Cargar nuevos pedidos con datos del cliente, productos y medio de pago
 - Pastelitos por unidad con mezcla de sabores (batata / membrillo) — precio cada 6 unidades
+- Tipo de entrega por pedido: 🛵 Envío a domicilio / ⛪ Retiro en iglesia
+- Notas especiales visibles directamente en la tabla del dashboard
 - Dashboard sin scroll: tabla con scroll interno, stats colapsables con botón 📊
 - Tarjeta **Cobrado** que suma solo los pedidos marcados como pagados
 - Cambio de estado por pedido: Pendiente → En preparación → En envío → Entregado
-- Estado de pago independiente (Pagado / Pendiente) con actualización inmediata de la card Cobrado
+- Estado de pago independiente (Pagado / Pendiente) con actualización inmediata
 - Filtros por estado, medio de pago y fecha
 - Edición completa de cualquier pedido
 - Eliminación de pedidos en estado Pendiente
-- Exportar pedidos a Excel con filtros aplicados (incluye columna Pagado)
+- Exportar pedidos a Excel con filtros aplicados (incluye tipo entrega y estado de pago)
 - Fechas de pedido visibles en la tabla

@@ -30,6 +30,8 @@ def validar_pedido(data):
         errores.append('La dirección es obligatoria.')
     if data.get('medio_pago') not in MEDIOS_PAGO:
         errores.append(f"Medio de pago inválido. Debe ser: {', '.join(MEDIOS_PAGO)}.")
+    if data.get('tipo_entrega') not in ('envio', 'retiro'):
+        errores.append("Tipo de entrega inválido.")
     try:
         qty_locro     = int(data.get('cantidad_locro', 0))
         qty_batata    = int(data.get('cantidad_pastelito_batata', 0))

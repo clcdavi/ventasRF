@@ -46,15 +46,12 @@ def init_db():
         fecha_actualizacion          TIMESTAMP NOT NULL DEFAULT NOW()
     );
     """
-    alter = """
-    ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE;
-    ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo_entrega TEXT NOT NULL DEFAULT 'envio';
-    """
     conn = get_db()
     try:
         with conn.cursor() as cur:
             cur.execute(ddl)
-            cur.execute(alter)
+            cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE")
+            cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo_entrega TEXT NOT NULL DEFAULT 'envio'")
         conn.commit()
     finally:
         conn.close()
