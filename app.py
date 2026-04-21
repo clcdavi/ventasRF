@@ -4,7 +4,7 @@ load_dotenv()
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_LOCRO_COMBO,
-                    PRECIO_PASTELITO_DOCENA)
+                    PRECIO_PASTELITO_MEDIA_DOCENA)
 import models
 import io
 from openpyxl import Workbook
@@ -155,7 +155,7 @@ def precios():
     return jsonify({
         'locro_unitario': PRECIO_LOCRO_UNITARIO,
         'locro_combo':    PRECIO_LOCRO_COMBO,
-        'pastelito_docena': PRECIO_PASTELITO_DOCENA,
+        'pastelito_media_docena': PRECIO_PASTELITO_MEDIA_DOCENA,
     })
 
 

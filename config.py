@@ -3,8 +3,8 @@
 PRECIO_LOCRO_UNITARIO = 12000   # ARS — 1 porción
 PRECIO_LOCRO_COMBO    = 20000   # ARS — 2 porciones (descuento de $4.000)
 
-# Pastelitos: mismo precio para batata y membrillo, la cantidad es en DOCENAS
-PRECIO_PASTELITO_DOCENA = 8000  # ARS — 1 docena (batata o membrillo)
+# Pastelitos: mismo precio para batata y membrillo, la cantidad es en MEDIAS DOCENAS
+PRECIO_PASTELITO_MEDIA_DOCENA = 4000  # ARS — 1 media docena (batata o membrillo)
 
 # ── Estados válidos del pedido (en orden de flujo) ──────────────────────────
 ESTADOS = ['Pendiente', 'En preparación', 'En envío', 'Entregado']

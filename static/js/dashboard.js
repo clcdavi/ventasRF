@@ -153,8 +153,8 @@ function renderTabla(pedidos) {
 function resumenProductos(p) {
   const partes = [];
   if (p.cantidad_locro > 0)               partes.push(`${p.cantidad_locro} locro`);
-  if (p.cantidad_pastelito_batata > 0)    partes.push(`${p.cantidad_pastelito_batata} doc batata`);
-  if (p.cantidad_pastelito_membrillo > 0) partes.push(`${p.cantidad_pastelito_membrillo} doc memb.`);
+  if (p.cantidad_pastelito_batata > 0)    partes.push(`${p.cantidad_pastelito_batata} ½doc batata`);
+  if (p.cantidad_pastelito_membrillo > 0) partes.push(`${p.cantidad_pastelito_membrillo} ½doc memb.`);
   return partes.join('<br>') || '—';
 }
 

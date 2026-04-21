@@ -4,7 +4,7 @@ import psycopg2.extras
 from datetime import datetime
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_LOCRO_COMBO,
-                    PRECIO_PASTELITO_DOCENA)
+                    PRECIO_PASTELITO_MEDIA_DOCENA)
 
 
 def get_db():
@@ -56,7 +56,7 @@ def init_db():
 
 def calcular_total(qty_locro, qty_batata, qty_membrillo):
     total_locro = (qty_locro // 2) * PRECIO_LOCRO_COMBO + (qty_locro % 2) * PRECIO_LOCRO_UNITARIO
-    total_pastelitos = (qty_batata + qty_membrillo) * PRECIO_PASTELITO_DOCENA
+    total_pastelitos = (qty_batata + qty_membrillo) * PRECIO_PASTELITO_MEDIA_DOCENA
     return total_locro + total_pastelitos
 
 

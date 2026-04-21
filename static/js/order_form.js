@@ -5,7 +5,7 @@
 
 let PRECIO_LOCRO_UNITARIO = 12000;
 let PRECIO_LOCRO_COMBO    = 20000;
-let PRECIO_PASTELITO_DOCENA = 8000;
+let PRECIO_PASTELITO_MEDIA_DOCENA = 4000;
 
 const form       = document.getElementById('form-pedido');
 const btnSubmit  = document.getElementById('btn-submit');
@@ -17,14 +17,14 @@ const bannerErr  = document.getElementById('banner-error');
 fetch('/api/precios')
   .then(r => r.json())
   .then(p => {
-    PRECIO_LOCRO_UNITARIO   = p.locro_unitario;
-    PRECIO_LOCRO_COMBO      = p.locro_combo;
-    PRECIO_PASTELITO_DOCENA = p.pastelito_docena;
+    PRECIO_LOCRO_UNITARIO     = p.locro_unitario;
+    PRECIO_LOCRO_COMBO        = p.locro_combo;
+    PRECIO_PASTELITO_MEDIA_DOCENA = p.pastelito_media_docena;
     // Actualizar hints de precio en el DOM
     const hintLocro = document.getElementById('hint-locro');
     const hintPastelito = document.getElementById('hint-pastelito');
     if (hintLocro) hintLocro.textContent = `$${fmt(PRECIO_LOCRO_UNITARIO)}/porción · combo 2 = $${fmt(PRECIO_LOCRO_COMBO)}`;
-    if (hintPastelito) hintPastelito.textContent = `$${fmt(PRECIO_PASTELITO_DOCENA)}/docena`;
+    if (hintPastelito) hintPastelito.textContent = `$${fmt(PRECIO_PASTELITO_MEDIA_DOCENA)}/media docena`;
     recalcular(); // calcular total inicial para el formulario de edición (ya tiene valores)
   });
 
@@ -36,7 +36,7 @@ function fmt(n) {
 // ── Cálculo del total ────────────────────────────────────────────────────────
 function calcularTotal(qLocro, qBatata, qMembrillo) {
   const totalLocro      = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
-  const totalPastelitos = (qBatata + qMembrillo) * PRECIO_PASTELITO_DOCENA;
+  const totalPastelitos = (qBatata + qMembrillo) * PRECIO_PASTELITO_MEDIA_DOCENA;
   return totalLocro + totalPastelitos;
 }
 
@@ -47,8 +47,8 @@ function recalcular() {
 
   // Subtotales por producto
   const subLocro     = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
-  const subBatata    = qBatata * PRECIO_PASTELITO_DOCENA;
-  const subMembrillo = qMembrillo * PRECIO_PASTELITO_DOCENA;
+  const subBatata    = qBatata * PRECIO_PASTELITO_MEDIA_DOCENA;
+  const subMembrillo = qMembrillo * PRECIO_PASTELITO_MEDIA_DOCENA;
 
   const subLocroEl     = document.getElementById('sub-locro');
   const subBataEl      = document.getElementById('sub-batata');
