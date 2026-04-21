@@ -24,7 +24,7 @@ fetch('/api/precios')
     const hintLocro = document.getElementById('hint-locro');
     const hintPastelito = document.getElementById('hint-pastelito');
     if (hintLocro) hintLocro.textContent = `$${fmt(PRECIO_LOCRO_UNITARIO)}/porción · combo 2 = $${fmt(PRECIO_LOCRO_COMBO)}`;
-    if (hintPastelito) hintPastelito.textContent = `$${fmt(PRECIO_PASTELITO_MEDIA_DOCENA)}/media docena`;
+    if (hintPastelito) hintPastelito.textContent = `$${fmt(PRECIO_PASTELITO_MEDIA_DOCENA)} cada 6 unidades (media docena)`;
     recalcular(); // calcular total inicial para el formulario de edición (ya tiene valores)
   });
 
@@ -34,24 +34,15 @@ function fmt(n) {
 }
 
 // ── Cálculo del total ────────────────────────────────────────────────────────
-function calcularTotal(qLocro, qBatata, qMembrillo) {
-  const totalLocro      = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
-  const totalUnidades   = qBatata + qMembrillo;
-  const totalPastelitos = totalUnidades > 0 ? Math.ceil(totalUnidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA : 0;
-  return totalLocro + totalPastelitos;
-}
-
 function recalcular() {
   const qLocro     = parseInt(document.getElementById('cantidad_locro')?.value)     || 0;
   const qBatata    = parseInt(document.getElementById('cantidad_pastelito_batata')?.value)    || 0;
   const qMembrillo = parseInt(document.getElementById('cantidad_pastelito_membrillo')?.value) || 0;
 
-  const subLocro       = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
-  const totalUnidades  = qBatata + qMembrillo;
-  const subPastelitos  = totalUnidades > 0 ? Math.ceil(totalUnidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA : 0;
-  const mediaDocenas   = Math.ceil(totalUnidades / 6);
-  const subBatata      = 0;
-  const subMembrillo   = 0;
+  const subLocro      = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
+  const totalUnidades = qBatata + qMembrillo;
+  const subPastelitos = totalUnidades > 0 ? Math.ceil(totalUnidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA : 0;
+  const mediaDocenas  = Math.ceil(totalUnidades / 6);
 
   const subLocroEl  = document.getElementById('sub-locro');
   const subPastEl   = document.getElementById('sub-pastelitos');

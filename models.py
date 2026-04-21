@@ -1,6 +1,5 @@
 import os
 import psycopg2
-import psycopg2.extras
 from datetime import datetime
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_LOCRO_COMBO,
