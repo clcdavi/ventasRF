@@ -107,6 +107,18 @@
   <section class="form-section">
     <h2 class="section-title">Entrega y pago</h2>
 
+    <div class="form-group">
+      <label>Tipo de entrega <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="tipo_entrega" value="envio" required checked /> 🛵 Envío a domicilio
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="tipo_entrega" value="retiro" /> ⛪ Retiro en iglesia
+        </label>
+      </div>
+    </div>
+
     <div class="form-row">
       <div class="form-group">
         <label for="horario_entrega">Horario preferido <span class="opcional">(opcional)</span></label>

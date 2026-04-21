@@ -186,7 +186,7 @@ def exportar_excel():
     encabezados = [
         'ID', 'Fecha', 'Cliente', 'Teléfono', 'Email', 'Dirección',
         'Locro (porciones)', 'Pastelitos Batata (unidades)', 'Pastelitos Membrillo (unidades)',
-        'Medio de pago', 'Total ($)', 'Horario entrega', 'Notas', 'Estado', 'Pagado',
+        'Medio de pago', 'Total ($)', 'Tipo entrega', 'Horario entrega', 'Notas', 'Estado', 'Pagado',
     ]
 
     header_fill = PatternFill('solid', fgColor='2563EB')
@@ -211,13 +211,14 @@ def exportar_excel():
             p['cantidad_pastelito_membrillo'],
             p['medio_pago'],
             p['monto_total'],
+            'Retiro iglesia' if p.get('tipo_entrega') == 'retiro' else 'Envío domicilio',
             p.get('horario_entrega') or '',
             p.get('notas') or '',
             p['estado'],
             'Sí' if p.get('pagado') else 'No',
         ])
 
-    anchos = [6, 18, 22, 14, 22, 28, 18, 22, 24, 14, 12, 16, 24, 16, 10]
+    anchos = [6, 18, 22, 14, 22, 28, 18, 22, 24, 14, 12, 16, 16, 24, 16, 10]
     for i, ancho in enumerate(anchos, start=1):
         ws.column_dimensions[get_column_letter(i)].width = ancho
 

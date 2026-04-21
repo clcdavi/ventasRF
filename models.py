@@ -42,11 +42,13 @@ def init_db():
         notas                        TEXT,
         estado                       TEXT NOT NULL DEFAULT 'Pendiente',
         pagado                       BOOLEAN NOT NULL DEFAULT FALSE,
+        tipo_entrega                 TEXT NOT NULL DEFAULT 'envio',
         fecha_actualizacion          TIMESTAMP NOT NULL DEFAULT NOW()
     );
     """
     alter = """
     ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo_entrega TEXT NOT NULL DEFAULT 'envio';
     """
     conn = get_db()
     try:
@@ -72,14 +74,15 @@ def create_pedido(data):
     qty_membrillo = int(data.get('cantidad_pastelito_membrillo', 0))
     monto_total   = calcular_total(qty_locro, qty_batata, qty_membrillo)
 
-    pagado = data.get('pagado') in (True, 'true', '1', 'on')
+    pagado       = data.get('pagado') in (True, 'true', '1', 'on')
+    tipo_entrega = data.get('tipo_entrega', 'envio')
 
     sql = """
     INSERT INTO pedidos
         (nombre_cliente, telefono, email, direccion,
          cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
-         medio_pago, monto_total, horario_entrega, notas, pagado)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING id
     """
     params = (
@@ -93,6 +96,7 @@ def create_pedido(data):
         data.get('horario_entrega', '').strip() or None,
         data.get('notas', '').strip() or None,
         pagado,
+        tipo_entrega,
     )
     conn = get_db()
     try:
@@ -176,14 +180,15 @@ def update_pedido(pedido_id, data):
     qty_membrillo = int(data.get('cantidad_pastelito_membrillo', 0))
     monto_total   = calcular_total(qty_locro, qty_batata, qty_membrillo)
 
-    pagado = data.get('pagado') in (True, 'true', '1', 'on')
+    pagado       = data.get('pagado') in (True, 'true', '1', 'on')
+    tipo_entrega = data.get('tipo_entrega', 'envio')
 
     sql = """
     UPDATE pedidos SET
         nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
         cantidad_locro = %s, cantidad_pastelito_batata = %s, cantidad_pastelito_membrillo = %s,
         medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
-        estado = %s, pagado = %s, fecha_actualizacion = NOW()
+        estado = %s, pagado = %s, tipo_entrega = %s, fecha_actualizacion = NOW()
     WHERE id = %s
     """
     params = (
@@ -198,6 +203,7 @@ def update_pedido(pedido_id, data):
         data.get('notas', '').strip() or None,
         data['estado'],
         pagado,
+        tipo_entrega,
         pedido_id,
     )
     conn = get_db()

@@ -129,11 +129,13 @@ function renderTabla(pedidos) {
       <td>
         <div class="cliente-nombre">${escHtml(p.nombre_cliente)}</div>
         <div class="cliente-tel">${escHtml(p.telefono)}</div>
+        ${p.notas ? `<div class="cliente-notas" title="${escHtml(p.notas)}">📝 ${escHtml(p.notas)}</div>` : ''}
       </td>
       <td class="td-dir">${escHtml(p.direccion)}</td>
       <td class="td-productos">${resumenProductos(p)}</td>
       <td class="td-total">$${fmt(p.monto_total)}</td>
       <td><span class="badge badge-pago">${escHtml(p.medio_pago)}</span></td>
+      <td><span class="badge ${p.tipo_entrega === 'retiro' ? 'badge-retiro' : 'badge-envio'}">${p.tipo_entrega === 'retiro' ? '⛪ Retiro' : '🛵 Envío'}</span></td>
       <td class="td-horario">${escHtml(p.horario_entrega || '—')}</td>
       <td>
         <select class="select-estado-inline badge ${ESTADO_CLASS[p.estado] || ''}"

@@ -579,6 +579,7 @@ textarea { resize: vertical; min-height: 64px; }
 
 .cliente-nombre { font-weight: 600; }
 .cliente-tel    { font-size: .8rem; color: var(--text-muted); }
+.cliente-notas  { font-size: .78rem; color: var(--amber); margin-top: .15rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
 
 .td-productos { font-size: .82rem; line-height: 1.5; }
 
@@ -597,6 +598,8 @@ textarea { resize: vertical; min-height: 64px; }
 .badge-amber  { background: #FEF3C7; color: #92400E; }
 .badge-green  { background: #DCFCE7; color: #166534; }
 .badge-pago   { background: #F3F4F6; color: #374151; }
+.badge-envio  { background: #DBEAFE; color: #1D4ED8; }
+.badge-retiro { background: #EDE9FE; color: #6D28D9; }
 
 /* Select de estado inline en la tabla */
 .select-estado-inline {
