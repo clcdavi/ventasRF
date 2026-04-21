@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_LOCRO_COMBO,
