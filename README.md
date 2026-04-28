@@ -39,8 +39,8 @@ El deploy se actualiza automáticamente con cada push a `main`.
 
 | Producto | Precio |
 |---|---|
-| Locro (porción) | $12.000 |
-| Combo 2 locros | $20.000 |
+| Locro (porción) | $10.000 |
+| Combo 2 locros | $18.000 |
 | Pastelitos (cada 6 unidades = 1 media docena) | $4.000 |
 
 ## Funcionalidades
