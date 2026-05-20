@@ -45,10 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('stats-panel')?.classList.toggle('hidden');
   });
 
-  // Filtros: re-fetch al cambiar
-  ['filtro-estado', 'filtro-pago', 'filtro-fecha'].forEach(id => {
+  ['filtro-estado', 'filtro-pago'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', cargarPedidos);
   });
+  
+  document.getElementById('filtro-fecha')?.addEventListener('change', cargarTodo);
 
   const inputBusqueda = document.getElementById('filtro-busqueda');
   if (inputBusqueda) {
@@ -373,7 +374,7 @@ function limpiarFiltros() {
   document.getElementById('filtro-pago').value   = '';
   document.getElementById('filtro-fecha').value  = '';
   if (document.getElementById('filtro-busqueda')) document.getElementById('filtro-busqueda').value = '';
-  cargarPedidos();
+  cargarTodo();
 }
 
 // ── Toast de feedback ─────────────────────────────────────────────────────────
