@@ -3,9 +3,10 @@
  * Maneja: cálculo en vivo del total, botones +/−, validación, submit via fetch
  */
 
-let PRECIO_LOCRO_UNITARIO = 12000;
-let PRECIO_LOCRO_COMBO    = 20000;
+let PRECIO_LOCRO_UNITARIO = 10000;
+let PRECIO_PASTELITO_DOCENA = 8000;
 let PRECIO_PASTELITO_MEDIA_DOCENA = 4000;
+let PRECIO_PASTELITO_UNIDAD = 700;
 
 const form       = document.getElementById('form-pedido');
 const btnSubmit  = document.getElementById('btn-submit');
@@ -18,13 +19,14 @@ fetch('/api/precios')
   .then(r => r.json())
   .then(p => {
     PRECIO_LOCRO_UNITARIO     = p.locro_unitario;
-    PRECIO_LOCRO_COMBO        = p.locro_combo;
+    PRECIO_PASTELITO_DOCENA   = p.pastelito_docena;
     PRECIO_PASTELITO_MEDIA_DOCENA = p.pastelito_media_docena;
+    PRECIO_PASTELITO_UNIDAD   = p.pastelito_unidad;
     // Actualizar hints de precio en el DOM
     const hintLocro = document.getElementById('hint-locro');
     const hintPastelito = document.getElementById('hint-pastelito');
-    if (hintLocro) hintLocro.textContent = `$${fmt(PRECIO_LOCRO_UNITARIO)}/porción · combo 2 = $${fmt(PRECIO_LOCRO_COMBO)}`;
-    if (hintPastelito) hintPastelito.textContent = `$${fmt(PRECIO_PASTELITO_MEDIA_DOCENA)} cada 6 unidades (media docena)`;
+    if (hintLocro) hintLocro.textContent = `$${fmt(PRECIO_LOCRO_UNITARIO)}/porción`;
+    if (hintPastelito) hintPastelito.textContent = `$${fmt(PRECIO_PASTELITO_UNIDAD)}/u · $${fmt(PRECIO_PASTELITO_MEDIA_DOCENA)}/½doc · $${fmt(PRECIO_PASTELITO_DOCENA)}/doc`;
     recalcular(); // calcular total inicial para el formulario de edición (ya tiene valores)
   });
 
@@ -39,21 +41,28 @@ function recalcular() {
   const qBatata    = parseInt(document.getElementById('cantidad_pastelito_batata')?.value)    || 0;
   const qMembrillo = parseInt(document.getElementById('cantidad_pastelito_membrillo')?.value) || 0;
 
-  const subLocro      = Math.floor(qLocro / 2) * PRECIO_LOCRO_COMBO + (qLocro % 2) * PRECIO_LOCRO_UNITARIO;
+  const subLocro = qLocro * PRECIO_LOCRO_UNITARIO;
   const totalUnidades = qBatata + qMembrillo;
-  const subPastelitos = totalUnidades > 0 ? Math.ceil(totalUnidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA : 0;
-  const mediaDocenas  = Math.ceil(totalUnidades / 6);
+  
+  const docenas = Math.floor(totalUnidades / 12);
+  const resto = totalUnidades % 12;
+  const medias = Math.floor(resto / 6);
+  const unidades = resto % 6;
+  
+  const subPastelitos = (docenas * PRECIO_PASTELITO_DOCENA) + 
+                        (medias * PRECIO_PASTELITO_MEDIA_DOCENA) + 
+                        (unidades * PRECIO_PASTELITO_UNIDAD);
 
   const subLocroEl  = document.getElementById('sub-locro');
   const subPastEl   = document.getElementById('sub-pastelitos');
   if (subLocroEl) subLocroEl.textContent = `$${fmt(subLocro)}`;
   if (subPastEl) {
     if (totalUnidades > 0) {
-      const resto = totalUnidades % 6;
-      const hint  = resto === 0
-        ? `${mediaDocenas} media${mediaDocenas > 1 ? 's' : ''} docena${mediaDocenas > 1 ? 's' : ''} · $${fmt(subPastelitos)}`
-        : `${totalUnidades} ud · ${mediaDocenas} ½doc (faltan ${6 - resto} para completar) · $${fmt(subPastelitos)}`;
-      subPastEl.textContent = hint;
+      let partes = [];
+      if (docenas > 0) partes.push(`${docenas} doc`);
+      if (medias > 0) partes.push(`1 ½doc`);
+      if (unidades > 0) partes.push(`${unidades} u`);
+      subPastEl.textContent = `${partes.join(' + ')} · $${fmt(subPastelitos)}`;
     } else {
       subPastEl.textContent = '$0';
     }

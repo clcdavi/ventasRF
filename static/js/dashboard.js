@@ -31,6 +31,11 @@ const ESTADO_CLASS = {
 
 // ── Carga inicial ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  const fechaInput = document.getElementById('filtro-fecha');
+  if (fechaInput && !fechaInput.value) {
+    fechaInput.value = '2026-05-25';
+  }
+
   cargarTodo();
 
   document.getElementById('btn-refresh')?.addEventListener('click', cargarTodo);
@@ -44,6 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
   ['filtro-estado', 'filtro-pago', 'filtro-fecha'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', cargarPedidos);
   });
+
+  const inputBusqueda = document.getElementById('filtro-busqueda');
+  if (inputBusqueda) {
+    inputBusqueda.addEventListener('input', () => {
+      clearTimeout(window.searchTimeout);
+      window.searchTimeout = setTimeout(cargarPedidos, 300);
+    });
+  }
 
   // Ordenar al hacer clic en cabeceras
   document.querySelectorAll('th.sortable').forEach(th => {
@@ -79,11 +92,13 @@ async function cargarPedidos() {
   const estado    = document.getElementById('filtro-estado')?.value || '';
   const medioPago = document.getElementById('filtro-pago')?.value    || '';
   const fecha     = document.getElementById('filtro-fecha')?.value   || '';
+  const busqueda  = document.getElementById('filtro-busqueda')?.value || '';
 
   const params = new URLSearchParams();
   if (estado)    params.append('estado',     estado);
   if (medioPago) params.append('medio_pago', medioPago);
   if (fecha)     params.append('fecha',      fecha);
+  if (busqueda)  params.append('q',          busqueda);
 
   try {
     const resp = await fetch(`/api/pedidos?${params.toString()}`);
@@ -165,28 +180,42 @@ function resumenProductos(p) {
   const partes = [];
 
   if (p.cantidad_locro > 0) {
-    const combos = Math.floor(p.cantidad_locro / 2);
-    const sueltos = p.cantidad_locro % 2;
-    let locroStr = '';
-    if (combos > 0)  locroStr += `${combos} combo${combos > 1 ? 's' : ''} locro`;
-    if (sueltos > 0) locroStr += (locroStr ? ' + ' : '') + `${sueltos} locro`;
-    partes.push(locroStr);
+    partes.push(`${p.cantidad_locro}xporciones locro`);
   }
 
   const bat  = p.cantidad_pastelito_batata    || 0;
   const memb = p.cantidad_pastelito_membrillo || 0;
   const totalUnid = bat + memb;
+  
   if (totalUnid > 0) {
-    const mediaDoc = Math.ceil(totalUnid / 6);
-    let pastStr = `${mediaDoc} ½doc pastelitos`;
-    const detalle = [];
-    if (bat  > 0) detalle.push(`${bat} bat.`);
-    if (memb > 0) detalle.push(`${memb} memb.`);
-    pastStr += `<br><span class="prod-detalle">${detalle.join(' + ')}</span>`;
+    let pastStr = '';
+    const sabores = [];
+    if (bat > 0) sabores.push(`${bat} batata`);
+    if (memb > 0) sabores.push(`${memb} membrillo`);
+    const saborStr = sabores.join(', ');
+
+    if (totalUnid % 12 === 0) {
+      const docenas = totalUnid / 12;
+      pastStr = `${docenas}xdocenas pastelitos (${saborStr})`;
+    } else if (totalUnid === 6) {
+      pastStr = `media docena pastelitos (${saborStr})`;
+    } else if (totalUnid % 6 === 0 && totalUnid > 12) {
+      const docenas = Math.floor(totalUnid / 12);
+      pastStr = `${docenas} y 1/2 docenas pastelitos (${saborStr})`;
+    } else {
+      pastStr = `${totalUnid} u pastelitos (${saborStr})`;
+    }
     partes.push(pastStr);
   }
 
-  return partes.join('<br>') || '—';
+  if (partes.length === 0) return '—';
+  
+  return `<details style="cursor: pointer; background: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
+            <summary style="font-weight: 600; color: #1e293b;">Ver productos</summary>
+            <div style="margin-top: 4px; font-size: 0.9em;">
+              ${partes.join('<br>')}
+            </div>
+          </details>`;
 }
 
 function opcionesEstado(actual) {
@@ -326,11 +355,13 @@ function exportarExcel() {
   const estado    = document.getElementById('filtro-estado')?.value || '';
   const medioPago = document.getElementById('filtro-pago')?.value    || '';
   const fecha     = document.getElementById('filtro-fecha')?.value   || '';
+  const busqueda  = document.getElementById('filtro-busqueda')?.value || '';
 
   const params = new URLSearchParams();
   if (estado)    params.append('estado',     estado);
   if (medioPago) params.append('medio_pago', medioPago);
   if (fecha)     params.append('fecha',      fecha);
+  if (busqueda)  params.append('q',          busqueda);
 
   window.location.href = `/api/export?${params.toString()}`;
 }
@@ -340,6 +371,7 @@ function limpiarFiltros() {
   document.getElementById('filtro-estado').value = '';
   document.getElementById('filtro-pago').value   = '';
   document.getElementById('filtro-fecha').value  = '';
+  if (document.getElementById('filtro-busqueda')) document.getElementById('filtro-busqueda').value = '';
   cargarPedidos();
 }
 

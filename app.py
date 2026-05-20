@@ -3,8 +3,8 @@ load_dotenv()
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 from config import (ESTADOS, MEDIOS_PAGO,
-                    PRECIO_LOCRO_UNITARIO, PRECIO_LOCRO_COMBO,
-                    PRECIO_PASTELITO_MEDIA_DOCENA)
+                    PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
+                    PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD)
 import models
 import io
 from openpyxl import Workbook
@@ -107,7 +107,8 @@ def listar_pedidos():
     estado     = request.args.get('estado') or None
     medio_pago = request.args.get('medio_pago') or None
     fecha      = request.args.get('fecha') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha)
+    busqueda   = request.args.get('q') or None
+    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda)
     return jsonify(pedidos)
 
 
@@ -167,8 +168,9 @@ def precios():
     """Expone los precios al frontend para el cálculo en tiempo real."""
     return jsonify({
         'locro_unitario': PRECIO_LOCRO_UNITARIO,
-        'locro_combo':    PRECIO_LOCRO_COMBO,
+        'pastelito_docena': PRECIO_PASTELITO_DOCENA,
         'pastelito_media_docena': PRECIO_PASTELITO_MEDIA_DOCENA,
+        'pastelito_unidad': PRECIO_PASTELITO_UNIDAD,
     })
 
 
@@ -179,7 +181,8 @@ def exportar_excel():
     estado     = request.args.get('estado') or None
     medio_pago = request.args.get('medio_pago') or None
     fecha      = request.args.get('fecha') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha)
+    busqueda   = request.args.get('q') or None
+    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda)
 
     wb = Workbook()
     ws = wb.active

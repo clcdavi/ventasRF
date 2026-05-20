@@ -3,6 +3,17 @@
 {% block body_class %}page-dashboard{% endblock %}
 
 {% block content %}
+<style>
+  .filter-fecha-highlight {
+    border: 2px solid #3b82f6 !important;
+    font-weight: bold;
+    background-color: #eff6ff !important;
+  }
+  #filtro-busqueda {
+    flex: 1;
+    min-width: 200px;
+  }
+</style>
 <div class="dashboard-layout">
 
   <!-- ── Sección fija superior ── -->
@@ -49,7 +60,8 @@
         <option value="tarjeta">Tarjeta</option>
       </select>
 
-      <input type="date" id="filtro-fecha" class="filter-input" />
+      <input type="search" id="filtro-busqueda" class="filter-input" placeholder="Buscar por nombre o ID..." />
+      <input type="date" id="filtro-fecha" class="filter-input filter-fecha-highlight" />
 
       <button id="btn-limpiar" class="btn-secondary btn-sm">✕ Limpiar</button>
       <button id="btn-exportar" class="btn-secondary btn-sm">↓ Excel</button>

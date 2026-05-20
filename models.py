@@ -2,8 +2,8 @@ import os
 import psycopg2
 from datetime import datetime
 from config import (ESTADOS, MEDIOS_PAGO,
-                    PRECIO_LOCRO_UNITARIO, PRECIO_LOCRO_COMBO,
-                    PRECIO_PASTELITO_MEDIA_DOCENA)
+                    PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
+                    PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD)
 
 
 def get_db():
@@ -58,10 +58,18 @@ def init_db():
 
 
 def calcular_total(qty_locro, qty_batata, qty_membrillo):
-    import math
-    total_locro = (qty_locro // 2) * PRECIO_LOCRO_COMBO + (qty_locro % 2) * PRECIO_LOCRO_UNITARIO
+    total_locro = qty_locro * PRECIO_LOCRO_UNITARIO
     total_unidades = qty_batata + qty_membrillo
-    total_pastelitos = math.ceil(total_unidades / 6) * PRECIO_PASTELITO_MEDIA_DOCENA if total_unidades > 0 else 0
+    
+    docenas = total_unidades // 12
+    resto = total_unidades % 12
+    medias = resto // 6
+    unidades = resto % 6
+    
+    total_pastelitos = (docenas * PRECIO_PASTELITO_DOCENA) + \
+                       (medias * PRECIO_PASTELITO_MEDIA_DOCENA) + \
+                       (unidades * PRECIO_PASTELITO_UNIDAD)
+                       
     return total_locro + total_pastelitos
 
 
@@ -106,7 +114,7 @@ def create_pedido(data):
         conn.close()
 
 
-def get_all_pedidos(estado=None, medio_pago=None, fecha=None):
+def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None):
     sql = "SELECT * FROM pedidos WHERE 1=1"
     params = []
     if estado:
@@ -118,6 +126,10 @@ def get_all_pedidos(estado=None, medio_pago=None, fecha=None):
     if fecha:
         sql += " AND fecha_pedido::date = %s"
         params.append(fecha)
+    if busqueda:
+        sql += " AND (id::text = %s OR nombre_cliente ILIKE %s)"
+        params.append(busqueda.strip())
+        params.append(f"%{busqueda.strip()}%")
     sql += " ORDER BY fecha_pedido DESC"
     conn = get_db()
     try:
