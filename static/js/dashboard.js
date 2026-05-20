@@ -306,8 +306,9 @@ function confirmarEliminar(id, nombre) {
 
 // ── Estadísticas ─────────────────────────────────────────────────────────────
 async function cargarStats() {
+  const fecha = document.getElementById('filtro-fecha')?.value || '';
   try {
-    const resp = await fetch('/api/stats');
+    const resp = await fetch('/api/stats' + (fecha ? '?fecha=' + fecha : ''));
     const s = await resp.json();
 
     // Tarjetas resumen

@@ -160,7 +160,8 @@ def eliminar_pedido(pedido_id):
 
 @app.route('/api/stats', methods=['GET'])
 def estadisticas():
-    return jsonify(models.get_stats())
+    fecha = request.args.get('fecha') or None
+    return jsonify(models.get_stats(fecha=fecha))
 
 
 @app.route('/api/precios', methods=['GET'])

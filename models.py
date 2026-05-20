@@ -241,11 +241,18 @@ def delete_pedido(pedido_id):
     return True, None
 
 
-def get_stats():
+def get_stats(fecha=None):
     conn = get_db()
+    
+    where_clause = ""
+    params = []
+    if fecha:
+        where_clause = "WHERE fecha_pedido::date = %s"
+        params.append(fecha)
+
     try:
         with conn.cursor() as cur:
-            cur.execute("""
+            cur.execute(f"""
                 SELECT
                     COALESCE(SUM(cantidad_locro), 0) as total_locro,
                     COALESCE(SUM(cantidad_pastelito_batata), 0) as total_batata,
@@ -253,19 +260,24 @@ def get_stats():
                     COALESCE(SUM(CASE WHEN pagado THEN monto_total ELSE 0 END), 0) as ingresos_totales,
                     COUNT(*) as total_pedidos
                 FROM pedidos
-            """)
+                {where_clause}
+            """, params)
             totales = _row_to_dict(cur.fetchone(), cur)
 
-            cur.execute("""
+            cur.execute(f"""
                 SELECT medio_pago, COALESCE(SUM(monto_total), 0) as total
-                FROM pedidos GROUP BY medio_pago
-            """)
+                FROM pedidos
+                {where_clause}
+                GROUP BY medio_pago
+            """, params)
             ingresos_pago = {row[0]: row[1] for row in cur.fetchall()}
 
-            cur.execute("""
+            cur.execute(f"""
                 SELECT estado, COUNT(*) as cantidad
-                FROM pedidos GROUP BY estado
-            """)
+                FROM pedidos
+                {where_clause}
+                GROUP BY estado
+            """, params)
             por_estado = {row[0]: row[1] for row in cur.fetchall()}
 
     finally:
