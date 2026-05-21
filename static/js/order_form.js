@@ -14,15 +14,11 @@ const totalElem  = document.getElementById('total-display');
 const bannerOk   = document.getElementById('banner-exito');
 const bannerErr  = document.getElementById('banner-error');
 
-// Establecer fecha por defecto (hoy) para nuevos pedidos
+// Establecer fecha por defecto (25 de mayo de 2026) para nuevos pedidos
 const fechaPedidoInput = document.getElementById('fecha_pedido');
 const modoForm = form?.dataset.modo || 'nuevo';
 if (fechaPedidoInput && modoForm === 'nuevo' && !fechaPedidoInput.value) {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  fechaPedidoInput.value = `${year}-${month}-${day}`;
+  fechaPedidoInput.value = '2026-05-25';
 }
 
 // ── Cargar precios desde el servidor ────────────────────────────────────────
