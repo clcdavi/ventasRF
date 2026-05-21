@@ -144,26 +144,28 @@ function renderTabla(pedidos) {
       <td class="td-fecha">${fmtFecha(p.fecha_pedido)}</td>
       <td>
         <div class="cliente-nombre">${escHtml(p.nombre_cliente)}</div>
-        <div class="cliente-tel">${escHtml(p.telefono)}</div>
-        ${p.notas ? `<div class="cliente-notas" title="${escHtml(p.notas)}">📝 ${escHtml(p.notas)}</div>` : ''}
+        <div class="cliente-tel" style="font-size:0.82em; color:#6b7280; margin-top:2px;">📞 ${escHtml(p.telefono)}</div>
+        <div class="cliente-dir" style="font-size:0.82em; color:#374151; margin-top:4px; max-width:200px; white-space:normal; word-break:break-word;">📍 ${escHtml(p.direccion)}</div>
+        ${p.notas ? `<div class="cliente-notas" title="${escHtml(p.notas)}" style="white-space:normal; overflow:visible; text-overflow:clip; max-width:none; margin-top:4px;">📝 ${escHtml(p.notas)}</div>` : ''}
       </td>
-      <td class="td-dir">${escHtml(p.direccion)}</td>
       <td class="td-productos">${resumenProductos(p)}</td>
       <td class="td-total">$${fmt(p.monto_total)}</td>
-      <td><span class="badge badge-pago">${escHtml(p.medio_pago)}</span></td>
-      <td><span class="badge ${p.tipo_entrega === 'retiro' ? 'badge-retiro' : 'badge-envio'}">${p.tipo_entrega === 'retiro' ? '⛪ Retiro' : '🛵 Envío'}</span></td>
-      <td class="td-horario">${escHtml(p.horario_entrega || '—')}</td>
+      <td>
+        <span class="badge ${p.tipo_entrega === 'retiro' ? 'badge-retiro' : 'badge-envio'}">${p.tipo_entrega === 'retiro' ? '⛪ Retiro' : '🛵 Envío'}</span>
+        ${p.horario_entrega ? `<div style="font-size:0.8em; color:#6b7280; margin-top:4px; white-space:nowrap;">🕒 ${escHtml(p.horario_entrega)}</div>` : ''}
+      </td>
+      <td>
+        <div style="margin-bottom:6px;"><span class="badge badge-pago">${escHtml(p.medio_pago)}</span></div>
+        <button class="btn-pagado ${p.pagado ? 'pagado' : 'no-pagado'}"
+                data-id="${p.id}" onclick="togglePagado(${p.id}, ${!p.pagado}, this)">
+          ${p.pagado ? 'Cobrado' : 'No cobrado'}
+        </button>
+      </td>
       <td>
         <select class="select-estado-inline badge ${ESTADO_CLASS[p.estado] || ''}"
                 data-id="${p.id}" onchange="cambiarEstado(${p.id}, this.value, this)">
           ${opcionesEstado(p.estado)}
         </select>
-      </td>
-      <td class="td-pagado">
-        <button class="btn-pagado ${p.pagado ? 'pagado' : 'no-pagado'}"
-                data-id="${p.id}" onclick="togglePagado(${p.id}, ${!p.pagado}, this)">
-          ${p.pagado ? 'Pagado' : 'Pendiente'}
-        </button>
       </td>
       <td class="td-acciones">
         <a href="/pedidos/${p.id}/editar" class="btn-icon btn-edit" title="Editar">✏️</a>
