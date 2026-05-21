@@ -32,6 +32,27 @@ def validar_pedido(data):
         errores.append(f"Medio de pago inválido. Debe ser: {', '.join(MEDIOS_PAGO)}.")
     if data.get('tipo_entrega') not in ('envio', 'retiro'):
         errores.append("Tipo de entrega inválido.")
+    
+    # Validación de formato de email
+    email = data.get('email', '').strip()
+    if email:
+        import re
+        if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
+            errores.append('El formato del email es inválido.')
+
+    # Validación de formato de teléfono
+    telefono = data.get('telefono', '').strip()
+    if telefono:
+        import re
+        if not re.match(r"^[+0-9\s()-]+$", telefono):
+            errores.append('El teléfono contiene caracteres no válidos.')
+
+    # Mitigación XSS: Bloquear caracteres < y > en campos de texto
+    for field in ['nombre_cliente', 'direccion', 'notas', 'horario_entrega']:
+        val = data.get(field, '')
+        if val and ('<' in val or '>' in val):
+            errores.append(f'El campo {field.replace("_", " ")} no puede contener los caracteres "<" o ">".')
+
     try:
         qty_locro     = int(data.get('cantidad_locro', 0))
         qty_batata    = int(data.get('cantidad_pastelito_batata', 0))
@@ -189,23 +210,33 @@ def exportar_excel():
     ws = wb.active
     ws.title = 'Pedidos'
 
+    # Habilitar líneas de cuadrícula visibles
+    ws.views.sheetView[0].showGridLines = True
+
     encabezados = [
         'ID', 'Fecha', 'Cliente', 'Teléfono', 'Email', 'Dirección',
         'Locro (porciones)', 'Pastelitos Batata (unidades)', 'Pastelitos Membrillo (unidades)',
         'Medio de pago', 'Total ($)', 'Tipo entrega', 'Horario entrega', 'Notas', 'Estado', 'Pagado',
     ]
 
-    header_fill = PatternFill('solid', fgColor='2563EB')
-    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+    header_font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     for col_idx, titulo in enumerate(encabezados, start=1):
         cell = ws.cell(row=1, column=col_idx, value=titulo)
         cell.fill = header_fill
         cell.font = header_font
-        cell.alignment = Alignment(horizontal='center')
+        cell.alignment = header_align
 
-    for p in pedidos:
-        ws.append([
+    # Estilos de celdas
+    align_center = Alignment(horizontal="center", vertical="center")
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_right = Alignment(horizontal="right", vertical="center")
+    font_body = Font(name="Segoe UI", size=11)
+
+    for row_idx, p in enumerate(pedidos, start=2):
+        row_values = [
             p['id'],
             p['fecha_pedido'],
             p['nombre_cliente'],
@@ -222,11 +253,37 @@ def exportar_excel():
             p.get('notas') or '',
             p['estado'],
             'Sí' if p.get('pagado') else 'No',
-        ])
+        ]
+        
+        for col_idx, val in enumerate(row_values, start=1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.font = font_body
+            
+            # Formatos de número y alineación
+            if col_idx == 11:  # Total ($)
+                cell.number_format = '$#,##0'
+                cell.alignment = align_right
+            elif col_idx in [1, 7, 8, 9]:  # ID y cantidades
+                cell.alignment = align_right
+            elif col_idx in [2, 4, 10, 12, 13, 15, 16]:  # Fecha, teléfono, pago, tipo entrega, horario, estado, pagado
+                cell.alignment = align_center
+            else:  # Cliente, dirección, email, notas
+                cell.alignment = align_left
 
-    anchos = [6, 18, 22, 14, 22, 28, 18, 22, 24, 14, 12, 16, 16, 24, 16, 10]
-    for i, ancho in enumerate(anchos, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = ancho
+    # Auto-ajustar Anchos de Columnas Dinámicamente
+    for col_idx, titulo in enumerate(encabezados, start=1):
+        col_letter = get_column_letter(col_idx)
+        max_len = len(str(titulo))
+        for row in range(2, len(pedidos) + 2):
+            val = ws.cell(row=row, column=col_idx).value
+            if val is not None:
+                if col_idx == 11 and isinstance(val, (int, float)):
+                    formatted_val = f"${val:,.0f}".replace(",", ".")
+                    max_len = max(max_len, len(formatted_val))
+                else:
+                    max_len = max(max_len, len(str(val)))
+        
+        ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
     buf = io.BytesIO()
     wb.save(buf)

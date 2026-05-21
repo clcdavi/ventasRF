@@ -74,10 +74,10 @@ Este script traerá todos los pedidos antiguos desde el endpoint de Render e imp
 | Producto | Detalle | Precio |
 |---|---|---|
 | **Locro** | Porción individual | $10.000 |
-| **Combo Locro** | 2 porciones | $18.000 |
-| **Pastelitos** | 1 unidad | $4.000 /u |
+| **Pastelitos** | 1 unidad | $700 /u |
 | **Pastelitos (½ Docena)** | 6 unidades | $4.000 |
 | **Pastelitos (Docena)** | 12 unidades | $8.000 |
+
 
 ---
 

@@ -1,27 +1,39 @@
-FROM python:3.11-slim
-
-# Evitar que Python escriba archivos .pyc en el disco
-ENV PYTHONDONTWRITEBYTECODE=1
-# Evitar que Python almacene en búfer stdout y stderr
-ENV PYTHONUNBUFFERED=1
+# Stage 1: Build stage
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para compilar paquetes si fuera necesario
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instalar dependencias del sistema necesarias para compilar paquetes
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar requirements e instalar dependencias
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copiar el código del proyecto
+# Stage 2: Runtime stage
+FROM python:3.11-slim AS runner
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instalar librería runtime de postgres y remover caché
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar paquetes de Python instalados en la etapa de construcción
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
 COPY . .
 
-# Exponer el puerto por defecto de Flask / Gunicorn
 EXPOSE 8080
 
-# Comando para ejecutar la app usando Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
