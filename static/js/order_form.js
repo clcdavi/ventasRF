@@ -21,6 +21,44 @@ if (fechaPedidoInput && modoForm === 'nuevo' && !fechaPedidoInput.value) {
   fechaPedidoInput.value = '2026-05-25';
 }
 
+// Pre-fill form from URL query parameters (Re-pedido logic)
+if (modoForm === 'nuevo') {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('nombre')) {
+    document.getElementById('nombre_cliente').value = params.get('nombre');
+  }
+  if (params.has('telefono')) {
+    document.getElementById('telefono').value = params.get('telefono');
+  }
+  if (params.has('email')) {
+    document.getElementById('email').value = params.get('email') || '';
+  }
+  if (params.has('direccion')) {
+    document.getElementById('direccion').value = params.get('direccion');
+  }
+  if (params.has('cantidad_locro')) {
+    document.getElementById('cantidad_locro').value = params.get('cantidad_locro');
+  }
+  if (params.has('cantidad_pastelito_batata')) {
+    document.getElementById('cantidad_pastelito_batata').value = params.get('cantidad_pastelito_batata');
+  }
+  if (params.has('cantidad_pastelito_membrillo')) {
+    document.getElementById('cantidad_pastelito_membrillo').value = params.get('cantidad_pastelito_membrillo');
+  }
+  if (params.has('tipo_entrega')) {
+    const radio = document.querySelector(`input[name="tipo_entrega"][value="${params.get('tipo_entrega')}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (params.has('medio_pago')) {
+    const radio = document.querySelector(`input[name="medio_pago"][value="${params.get('medio_pago')}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (params.has('notas')) {
+    document.getElementById('notas').value = params.get('notas') || '';
+  }
+  recalcular();
+}
+
 // ── Cargar precios desde el servidor ────────────────────────────────────────
 fetch('/api/precios')
   .then(r => r.json())

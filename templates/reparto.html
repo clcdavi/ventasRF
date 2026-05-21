@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Reparto y Envíos — VentasRF{% endblock %}
+{% block body_class %}page-reparto{% endblock %}
+
+{% block content %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<style>
+  .reparto-container {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 1.5rem;
+    height: calc(100vh - 52px - 38px - 3.5rem);
+    min-height: 500px;
+  }
+
+  .reparto-sidebar {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .reparto-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: #f8fafc;
+  }
+
+  .reparto-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+
+  .reparto-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .reparto-actions {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .reparto-list-wrap {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .delivery-item {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    transition: background-color 0.2s;
+  }
+
+  .delivery-item:hover {
+    background-color: #f1f5f9;
+  }
+
+  .delivery-item.active {
+    background-color: #f0fdf4;
+  }
+
+  .delivery-checkbox {
+    margin-top: 0.25rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    cursor: pointer;
+  }
+
+  .delivery-content {
+    flex: 1;
+    font-size: 0.875rem;
+  }
+
+  .delivery-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+
+  .delivery-address {
+    color: #374151;
+    font-size: 0.82rem;
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+  }
+
+  .delivery-products {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+  }
+
+  .delivery-time {
+    font-size: 0.75rem;
+    color: var(--amber);
+    font-weight: 600;
+    margin-top: 0.25rem;
+    display: block;
+  }
+
+  .map-wrapper {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+
+  #mapa-reparto {
+    width: 100%;
+    height: 100%;
+    background: #e5e7eb;
+    z-index: 1;
+  }
+
+  .route-instructions {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    max-width: 320px;
+    z-index: 10;
+    font-size: 0.82rem;
+    pointer-events: none;
+  }
+
+  .route-instructions-title {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+
+  .btn-whatsapp {
+    background-color: #25D366;
+    color: white !important;
+    border: none;
+    box-shadow: 0 2px 4px rgba(37, 211, 102, 0.2);
+  }
+
+  .btn-whatsapp:hover {
+    background-color: #128C7E;
+    box-shadow: 0 4px 10px rgba(18, 140, 126, 0.35);
+  }
+
+  /* Vista móvil: apilamos */
+  @media (max-width: 768px) {
+    .reparto-container {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+    .reparto-sidebar {
+      max-height: 400px;
+    }
+    .map-wrapper {
+      height: 400px;
+    }
+  }
+</style>
+
+<div class="page-header">
+  <h1>Ruteador y Reparto</h1>
+  <a href="/dashboard" class="btn-secondary btn-sm">← Volver al Dashboard</a>
+</div>
+
+<div class="reparto-container">
+  <!-- Columna izquierda: Sidebar -->
+  <div class="reparto-sidebar">
+    <div class="reparto-header">
+      <h2>Envíos Activos</h2>
+      <div class="reparto-controls">
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="date" id="filtro-fecha-reparto" value="2026-05-01" class="filter-input filter-fecha-highlight" style="flex: 1; max-width: none;" />
+          <button id="btn-limpiar-fecha-reparto" class="btn-secondary btn-sm" style="padding: 0.55rem; height: 36px; display: flex; align-items: center;" title="Todas las fechas">✕</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+          <label class="checkbox-label" style="font-size: 0.85rem;">
+            <input type="checkbox" id="select-all-reparto" /> Seleccionar todos
+          </label>
+          <span id="reparto-counter" style="font-size: 0.8rem; font-weight: 700; color: var(--primary-dark);">0 seleccionados</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="reparto-list-wrap" id="reparto-lista-pedidos">
+      <!-- Se llena dinámicamente -->
+      <div style="padding: 2rem; text-align: center; color: var(--text-muted);">Cargando envíos...</div>
+    </div>
+
+    <div class="reparto-actions">
+      <button id="btn-generar-ruta" class="btn-primary" disabled>
+        🗺️ Generar Ruta (Google Maps)
+      </button>
+      <button id="btn-whatsapp-repartidor" class="btn-primary btn-whatsapp" disabled>
+        💬 Enviar Ruta a Repartidor
+      </button>
+    </div>
+  </div>
+
+  <!-- Columna derecha: Mapa -->
+  <div class="map-wrapper">
+    <div id="mapa-reparto"></div>
+    <div class="route-instructions" id="info-ruta-capa">
+      <div class="route-instructions-title">Información de Ruta</div>
+      <p id="info-ruta-texto">Seleccione pedidos del listado para geocodificarlos y visualizarlos en el mapa.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{{ url_for('static', filename='js/reparto.js') }}"></script>
+{% endblock %}

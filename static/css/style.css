@@ -782,6 +782,32 @@ textarea { resize: vertical; min-height: 64px; }
   .bar-wrap { height: 8px; }
 
   .toast { left: 1rem; right: 1rem; bottom: 1rem; max-width: none; }
+
+  /* Ajustes responsivos para el dashboard */
+  .page-dashboard { height: auto; overflow: auto; }
+  .page-dashboard .main-content { height: auto; overflow: visible; }
+  .dashboard-layout { height: auto; overflow: visible; }
+  .table-section { max-height: 450px; }
+
+  /* Centrado de navbar en celulares */
+  .navbar {
+    padding: .5rem 1rem;
+    justify-content: center;
+  }
+  .navbar-brand {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.25rem;
+  }
+  .navbar-links {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+    gap: 0.35rem;
+  }
+  .nav-link {
+    padding: .35rem .55rem;
+  }
 }
 
 @media (max-width: 420px) {

@@ -5,12 +5,84 @@ from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
                     PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD)
 
+import sqlite3
+import re
+
+class SQLiteCursorWrapper:
+    def __init__(self, sqlite_cursor):
+        self.cur = sqlite_cursor
+
+    def execute(self, sql, params=None):
+        # Translate Postgres SQL to SQLite
+        sql = sql.replace('%s', '?')
+        sql = sql.replace('ILIKE', 'LIKE')
+        sql = sql.replace('NOW()', "(datetime('now', 'localtime'))")
+        # Replace date cast: fecha_pedido::date = ? -> date(fecha_pedido) = ?
+        sql = re.sub(r'(\w+)::date\b', r'date(\1)', sql)
+        # Replace SERIAL with INTEGER PRIMARY KEY AUTOINCREMENT in CREATE TABLE
+        sql = sql.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT')
+        # Remove IF NOT EXISTS from ADD COLUMN clauses (SQLite syntax)
+        sql = re.sub(r'ADD COLUMN\s+IF\s+NOT\s+EXISTS\b', 'ADD COLUMN', sql, flags=re.IGNORECASE)
+        try:
+            if params is not None:
+                self.cur.execute(sql, params)
+            else:
+                self.cur.execute(sql)
+        except Exception as e:
+            # If it's ALTER TABLE ADD COLUMN and column already exists, ignore
+            if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
+                pass
+            else:
+                raise e
+
+    def fetchone(self):
+        return self.cur.fetchone()
+
+    def fetchall(self):
+        return self.cur.fetchall()
+
+    @property
+    def description(self):
+        return self.cur.description
+
+    @property
+    def rowcount(self):
+        return self.cur.rowcount
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cur.close()
+
+class SQLiteConnectionWrapper:
+    def __init__(self, sqlite_conn):
+        self.conn = sqlite_conn
+
+    def cursor(self):
+        return SQLiteCursorWrapper(self.conn.cursor())
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def close(self):
+        self.conn.close()
+
 
 def get_db():
-    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-    with conn.cursor() as cur:
-        cur.execute("SET TIME ZONE 'America/Argentina/Buenos_Aires'")
-    return conn
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        conn = psycopg2.connect(db_url)
+        with conn.cursor() as cur:
+            cur.execute("SET TIME ZONE 'America/Argentina/Buenos_Aires'")
+        return conn
+    else:
+        # Fallback to local SQLite database
+        conn = sqlite3.connect('ventasRF.db')
+        return SQLiteConnectionWrapper(conn)
 
 
 def _serialize(val):
@@ -139,7 +211,7 @@ def create_pedido(data):
         conn.close()
 
 
-def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None):
+def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None):
     sql = "SELECT * FROM pedidos WHERE 1=1"
     params = []
     if estado:
@@ -151,6 +223,9 @@ def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None):
     if fecha:
         sql += " AND fecha_pedido::date = %s"
         params.append(fecha)
+    if tipo_entrega:
+        sql += " AND tipo_entrega = %s"
+        params.append(tipo_entrega)
     if busqueda:
         sql += " AND (id::text = %s OR nombre_cliente ILIKE %s)"
         params.append(busqueda.strip())
@@ -340,3 +415,47 @@ def get_stats(fecha=None):
         'ingresos_por_pago': ingresos_pago,
         'por_estado': por_estado,
     }
+
+
+def get_contactos(fecha=None):
+    sql = """
+    SELECT 
+        nombre_cliente, 
+        telefono,
+        (SELECT email FROM pedidos p2 WHERE p2.nombre_cliente = p.nombre_cliente AND p2.telefono = p.telefono ORDER BY fecha_pedido DESC LIMIT 1) as email,
+        (SELECT direccion FROM pedidos p2 WHERE p2.nombre_cliente = p.nombre_cliente AND p2.telefono = p.telefono ORDER BY fecha_pedido DESC LIMIT 1) as direccion,
+        COUNT(*) as total_pedidos,
+        SUM(monto_total) as gasto_total,
+        MAX(fecha_pedido) as ultimo_pedido
+    FROM pedidos p
+    WHERE 1=1
+    """
+    params = []
+    if fecha:
+        sql += " AND EXISTS (SELECT 1 FROM pedidos p3 WHERE p3.nombre_cliente = p.nombre_cliente AND p3.telefono = p.telefono AND p3.fecha_pedido::date = %s)"
+        params.append(fecha)
+    
+    sql += " GROUP BY nombre_cliente, telefono ORDER BY nombre_cliente ASC"
+    
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            return [_row_to_dict(row, cur) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def get_historial_contacto(nombre_cliente, telefono):
+    sql = """
+    SELECT * FROM pedidos 
+    WHERE nombre_cliente = %s AND telefono = %s 
+    ORDER BY fecha_pedido DESC
+    """
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (nombre_cliente, telefono))
+            return [_row_to_dict(row, cur) for row in cur.fetchall()]
+    finally:
+        conn.close()

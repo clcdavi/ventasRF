@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('stats-panel')?.classList.toggle('hidden');
   });
 
-  ['filtro-estado', 'filtro-pago'].forEach(id => {
+  ['filtro-estado', 'filtro-pago', 'filtro-entrega'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', cargarPedidos);
   });
   
@@ -94,12 +94,14 @@ async function cargarPedidos() {
   const medioPago = document.getElementById('filtro-pago')?.value    || '';
   const fecha     = document.getElementById('filtro-fecha')?.value   || '';
   const busqueda  = document.getElementById('filtro-busqueda')?.value || '';
+  const tipoEntrega = document.getElementById('filtro-entrega')?.value || '';
 
   const params = new URLSearchParams();
   if (estado)    params.append('estado',     estado);
   if (medioPago) params.append('medio_pago', medioPago);
   if (fecha)     params.append('fecha',      fecha);
   if (busqueda)  params.append('q',          busqueda);
+  if (tipoEntrega) params.append('tipo_entrega', tipoEntrega);
 
   try {
     const resp = await fetch(`/api/pedidos?${params.toString()}`);
@@ -360,12 +362,14 @@ function exportarExcel() {
   const medioPago = document.getElementById('filtro-pago')?.value    || '';
   const fecha     = document.getElementById('filtro-fecha')?.value   || '';
   const busqueda  = document.getElementById('filtro-busqueda')?.value || '';
+  const tipoEntrega = document.getElementById('filtro-entrega')?.value || '';
 
   const params = new URLSearchParams();
   if (estado)    params.append('estado',     estado);
   if (medioPago) params.append('medio_pago', medioPago);
   if (fecha)     params.append('fecha',      fecha);
   if (busqueda)  params.append('q',          busqueda);
+  if (tipoEntrega) params.append('tipo_entrega', tipoEntrega);
 
   window.location.href = `/api/export?${params.toString()}`;
 }
@@ -374,6 +378,7 @@ function exportarExcel() {
 function limpiarFiltros() {
   document.getElementById('filtro-estado').value = '';
   document.getElementById('filtro-pago').value   = '';
+  document.getElementById('filtro-entrega').value = '';
   document.getElementById('filtro-fecha').value  = '';
   if (document.getElementById('filtro-busqueda')) document.getElementById('filtro-busqueda').value = '';
   cargarTodo();

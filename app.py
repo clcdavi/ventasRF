@@ -129,7 +129,8 @@ def listar_pedidos():
     medio_pago = request.args.get('medio_pago') or None
     fecha      = request.args.get('fecha') or None
     busqueda   = request.args.get('q') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda)
+    tipo_entrega = request.args.get('tipo_entrega') or None
+    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega)
     return jsonify(pedidos)
 
 
@@ -177,6 +178,44 @@ def eliminar_pedido(pedido_id):
     return jsonify({'ok': True})
 
 
+# ── Nuevas Vistas (Agenda y Reparto) ─────────────────────────────────────────
+
+@app.route('/agenda')
+def agenda():
+    return render_template('agenda.html')
+
+
+@app.route('/reparto')
+def reparto():
+    return render_template('reparto.html')
+
+
+# ── Nuevas API de Contactos y Envío ──────────────────────────────────────────
+
+@app.route('/api/contactos', methods=['GET'])
+def listar_contactos():
+    fecha = request.args.get('fecha') or None
+    contactos = models.get_contactos(fecha=fecha)
+    return jsonify(contactos)
+
+
+@app.route('/api/contactos/historial', methods=['GET'])
+def historial_contacto():
+    nombre = request.args.get('nombre')
+    telefono = request.args.get('telefono')
+    if not nombre or not telefono:
+        return jsonify({'error': 'Nombre y teléfono son obligatorios.'}), 400
+    historial = models.get_historial_contacto(nombre, telefono)
+    return jsonify(historial)
+
+
+@app.route('/api/pedidos/envios', methods=['GET'])
+def listar_pedidos_envios():
+    fecha = request.args.get('fecha') or None
+    pedidos = models.get_all_pedidos(fecha=fecha, tipo_entrega='envio')
+    return jsonify(pedidos)
+
+
 # ── API de estadísticas y configuración ─────────────────────────────────────
 
 @app.route('/api/stats', methods=['GET'])
@@ -204,7 +243,8 @@ def exportar_excel():
     medio_pago = request.args.get('medio_pago') or None
     fecha      = request.args.get('fecha') or None
     busqueda   = request.args.get('q') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda)
+    tipo_entrega = request.args.get('tipo_entrega') or None
+    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega)
 
     wb = Workbook()
     ws = wb.active
