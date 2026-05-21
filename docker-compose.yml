@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ventasrf_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-usuario}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-ventasrf}
+      PGTIMEZONE: 'America/Argentina/Buenos_Aires'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+
+  web:
+    build: .
+    container_name: ventasrf_web
+    restart: always
+    ports:
+      - "8081:8080"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-usuario}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-ventasrf}
+      - TZ=America/Argentina/Buenos_Aires
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
