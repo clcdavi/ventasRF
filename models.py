@@ -81,28 +81,53 @@ def create_pedido(data):
 
     pagado       = data.get('pagado') in (True, 'true', '1', 'on')
     tipo_entrega = data.get('tipo_entrega', 'envio')
+    fecha_pedido = data.get('fecha_pedido', '').strip() or None
 
-    sql = """
-    INSERT INTO pedidos
-        (nombre_cliente, telefono, email, direccion,
-         cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
-         medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    RETURNING id
-    """
-    params = (
-        data['nombre_cliente'].strip(),
-        data['telefono'].strip(),
-        data.get('email', '').strip() or None,
-        data['direccion'].strip(),
-        qty_locro, qty_batata, qty_membrillo,
-        data['medio_pago'],
-        monto_total,
-        data.get('horario_entrega', '').strip() or None,
-        data.get('notas', '').strip() or None,
-        pagado,
-        tipo_entrega,
-    )
+    if fecha_pedido:
+        sql = """
+        INSERT INTO pedidos
+            (nombre_cliente, telefono, email, direccion,
+             cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
+             medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega, fecha_pedido)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """
+        params = (
+            data['nombre_cliente'].strip(),
+            data['telefono'].strip(),
+            data.get('email', '').strip() or None,
+            data['direccion'].strip(),
+            qty_locro, qty_batata, qty_membrillo,
+            data['medio_pago'],
+            monto_total,
+            data.get('horario_entrega', '').strip() or None,
+            data.get('notas', '').strip() or None,
+            pagado,
+            tipo_entrega,
+            fecha_pedido
+        )
+    else:
+        sql = """
+        INSERT INTO pedidos
+            (nombre_cliente, telefono, email, direccion,
+             cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
+             medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """
+        params = (
+            data['nombre_cliente'].strip(),
+            data['telefono'].strip(),
+            data.get('email', '').strip() or None,
+            data['direccion'].strip(),
+            qty_locro, qty_batata, qty_membrillo,
+            data['medio_pago'],
+            monto_total,
+            data.get('horario_entrega', '').strip() or None,
+            data.get('notas', '').strip() or None,
+            pagado,
+            tipo_entrega
+        )
     conn = get_db()
     try:
         with conn.cursor() as cur:
@@ -191,30 +216,57 @@ def update_pedido(pedido_id, data):
 
     pagado       = data.get('pagado') in (True, 'true', '1', 'on')
     tipo_entrega = data.get('tipo_entrega', 'envio')
+    fecha_pedido = data.get('fecha_pedido', '').strip() or None
 
-    sql = """
-    UPDATE pedidos SET
-        nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
-        cantidad_locro = %s, cantidad_pastelito_batata = %s, cantidad_pastelito_membrillo = %s,
-        medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
-        estado = %s, pagado = %s, tipo_entrega = %s, fecha_actualizacion = NOW()
-    WHERE id = %s
-    """
-    params = (
-        data['nombre_cliente'].strip(),
-        data['telefono'].strip(),
-        data.get('email', '').strip() or None,
-        data['direccion'].strip(),
-        qty_locro, qty_batata, qty_membrillo,
-        data['medio_pago'],
-        monto_total,
-        data.get('horario_entrega', '').strip() or None,
-        data.get('notas', '').strip() or None,
-        data['estado'],
-        pagado,
-        tipo_entrega,
-        pedido_id,
-    )
+    if fecha_pedido:
+        sql = """
+        UPDATE pedidos SET
+            nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
+            cantidad_locro = %s, cantidad_pastelito_batata = %s, cantidad_pastelito_membrillo = %s,
+            medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
+            estado = %s, pagado = %s, tipo_entrega = %s, fecha_pedido = %s, fecha_actualizacion = NOW()
+        WHERE id = %s
+        """
+        params = (
+            data['nombre_cliente'].strip(),
+            data['telefono'].strip(),
+            data.get('email', '').strip() or None,
+            data['direccion'].strip(),
+            qty_locro, qty_batata, qty_membrillo,
+            data['medio_pago'],
+            monto_total,
+            data.get('horario_entrega', '').strip() or None,
+            data.get('notas', '').strip() or None,
+            data['estado'],
+            pagado,
+            tipo_entrega,
+            fecha_pedido,
+            pedido_id,
+        )
+    else:
+        sql = """
+        UPDATE pedidos SET
+            nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
+            cantidad_locro = %s, cantidad_pastelito_batata = %s, cantidad_pastelito_membrillo = %s,
+            medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
+            estado = %s, pagado = %s, tipo_entrega = %s, fecha_actualizacion = NOW()
+        WHERE id = %s
+        """
+        params = (
+            data['nombre_cliente'].strip(),
+            data['telefono'].strip(),
+            data.get('email', '').strip() or None,
+            data['direccion'].strip(),
+            qty_locro, qty_batata, qty_membrillo,
+            data['medio_pago'],
+            monto_total,
+            data.get('horario_entrega', '').strip() or None,
+            data.get('notas', '').strip() or None,
+            data['estado'],
+            pagado,
+            tipo_entrega,
+            pedido_id,
+        )
     conn = get_db()
     try:
         with conn.cursor() as cur:

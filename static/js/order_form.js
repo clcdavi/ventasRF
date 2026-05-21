@@ -14,6 +14,17 @@ const totalElem  = document.getElementById('total-display');
 const bannerOk   = document.getElementById('banner-exito');
 const bannerErr  = document.getElementById('banner-error');
 
+// Establecer fecha por defecto (hoy) para nuevos pedidos
+const fechaPedidoInput = document.getElementById('fecha_pedido');
+const modoForm = form?.dataset.modo || 'nuevo';
+if (fechaPedidoInput && modoForm === 'nuevo' && !fechaPedidoInput.value) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  fechaPedidoInput.value = `${year}-${month}-${day}`;
+}
+
 // ── Cargar precios desde el servidor ────────────────────────────────────────
 fetch('/api/precios')
   .then(r => r.json())

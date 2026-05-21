@@ -121,22 +121,27 @@
 
     <div class="form-row">
       <div class="form-group">
+        <label for="fecha_pedido">Fecha del pedido <span class="req">*</span></label>
+        <input type="date" id="fecha_pedido" name="fecha_pedido" required />
+      </div>
+      <div class="form-group">
         <label for="horario_entrega">Horario preferido <span class="opcional">(opcional)</span></label>
         <input type="text" id="horario_entrega" name="horario_entrega" placeholder="Ej: 12:00 - 13:00" />
       </div>
-      <div class="form-group">
-        <label>Medio de pago <span class="req">*</span></label>
-        <div class="radio-group">
-          <label class="radio-label">
-            <input type="radio" name="medio_pago" value="efectivo" required /> Efectivo
-          </label>
-          <label class="radio-label">
-            <input type="radio" name="medio_pago" value="transferencia" /> Transferencia
-          </label>
-          <label class="radio-label">
-            <input type="radio" name="medio_pago" value="tarjeta" /> Tarjeta
-          </label>
-        </div>
+    </div>
+
+    <div class="form-group">
+      <label>Medio de pago <span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="medio_pago" value="efectivo" required /> Efectivo
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="medio_pago" value="transferencia" /> Transferencia
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="medio_pago" value="tarjeta" /> Tarjeta
+        </label>
       </div>
     </div>
   </section>
