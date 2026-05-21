@@ -31,7 +31,10 @@ const ESTADO_CLASS = {
 
 // ── Carga inicial ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Se deja la fecha vacía por defecto para cargar todos los pedidos sin filtrar por una fecha específica inicialmente.
+  const fechaInput = document.getElementById('filtro-fecha');
+  if (fechaInput && !fechaInput.value) {
+    fechaInput.value = '2026-05-25';
+  }
 
   cargarTodo();
 
