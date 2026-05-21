@@ -18,7 +18,7 @@ class SQLiteCursorWrapper:
         sql = sql.replace('ILIKE', 'LIKE')
         sql = sql.replace('NOW()', "(datetime('now', 'localtime'))")
         # Replace date cast: fecha_pedido::date = ? -> date(fecha_pedido) = ?
-        sql = re.sub(r'(\w+)::date\b', r'date(\1)', sql)
+        sql = re.sub(r'([\w\.]+)::date\b', r'date(\1)', sql)
         # Replace SERIAL with INTEGER PRIMARY KEY AUTOINCREMENT in CREATE TABLE
         sql = sql.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT')
         # Remove IF NOT EXISTS from ADD COLUMN clauses (SQLite syntax)

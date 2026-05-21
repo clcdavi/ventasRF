@@ -48,11 +48,18 @@ async function cargarContactos() {
     if (contactoSeleccionado) {
       const match = contactosCache.find(c => c.nombre_cliente === contactoSeleccionado.nombre_cliente && c.telefono === contactoSeleccionado.telefono);
       if (match) {
-        // Volver a seleccionarlo para refrescar
-        const index = contactosCache.indexOf(match);
-        const elements = document.querySelectorAll('.contact-item');
-        if (elements[index]) {
-          elements[index].click();
+        // Volver a seleccionarlo para refrescar buscando su índice en la lista filtrada actual
+        const q = document.getElementById('buscar-contacto')?.value.toLowerCase().trim() || '';
+        const filtrados = contactosCache.filter(c => {
+          return c.nombre_cliente.toLowerCase().includes(q) || 
+                 c.telefono.toLowerCase().includes(q);
+        });
+        const index = filtrados.findIndex(c => c.nombre_cliente === contactoSeleccionado.nombre_cliente && c.telefono === contactoSeleccionado.telefono);
+        if (index !== -1) {
+          const elements = document.querySelectorAll('.contact-item');
+          if (elements[index]) {
+            elements[index].click();
+          }
         }
       } else {
         // Deseleccionar si ya no está en el filtro
