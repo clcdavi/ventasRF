@@ -49,6 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (seleccionados.length === 0) return;
     despacharWhatsApp();
   });
+
+  // Cargar teléfono del repartidor guardado
+  const telInput = document.getElementById('tel-repartidor');
+  if (telInput) {
+    telInput.value = localStorage.getItem('tel_repartidor') || '';
+    telInput.addEventListener('input', (e) => {
+      localStorage.setItem('tel_repartidor', e.target.value);
+    });
+  }
 });
 
 // ── Inicializar el Mapa de Leaflet ───────────────────────────────────────────
@@ -554,15 +563,14 @@ function despacharWhatsApp() {
 
   msg += `🗺️ *Ruta Completa en Google Maps:*\n${mapsUrl}`;
 
-  // Preguntar por el teléfono del repartidor (opcional)
-  const telRepartidor = prompt('Ingrese el teléfono del repartidor (con código de país, ej: 5493416123456) o deje vacío para elegir contacto en WhatsApp:');
+  const telInput = document.getElementById('tel-repartidor');
+  const telRepartidor = telInput ? telInput.value.trim() : '';
   
   let linkWhatsApp = '';
-  if (telRepartidor && telRepartidor.trim()) {
+  if (telRepartidor) {
     const cleanTel = telRepartidor.replace(/\D/g, '');
     linkWhatsApp = `https://wa.me/${cleanTel}?text=${encodeURIComponent(msg)}`;
   } else {
-    // Si deja vacío, se abre API de envío sin número y WhatsApp preguntará a quién enviarlo
     linkWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   }
 
