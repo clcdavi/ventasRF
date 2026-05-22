@@ -53,9 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Inicializar el Mapa de Leaflet ───────────────────────────────────────────
 function initMap() {
-  // Coordenadas iniciales por defecto en San Fernando, Buenos Aires
-  const defaultCenter = [-34.4379, -58.5583];
-  const defaultZoom = 13;
+  // Coordenadas de inicio siempre en Blanco Encalada 2384, San Fernando
+  const defaultCenter = [-34.4652509, -58.5747665];
+  const defaultZoom = 14;
 
   mapa = L.map('mapa-reparto').setView(defaultCenter, defaultZoom);
   
@@ -65,6 +65,38 @@ function initMap() {
   }).addTo(mapa);
 
   markersGroup = L.featureGroup().addTo(mapa);
+
+  // Agregar marcador permanente de ubicación inicial (Inicio/Depósito)
+  const inicioIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: `<div style="
+      background-color: #dc2626; 
+      color: white; 
+      border-radius: 50%; 
+      width: 28px; 
+      height: 28px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: bold; 
+      font-size: 0.85rem;
+      border: 2px solid white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">🏠</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+
+  const popupContent = `
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.85rem; min-width: 160px; line-height: 1.4;">
+      <div style="font-weight: 700; color: #dc2626; margin-bottom: 0.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem;">
+        Punto de Inicio
+      </div>
+      <div style="font-weight: 600; margin-bottom: 0.25rem;">🏠 Blanco Encalada 2384, San Fernando</div>
+    </div>
+  `;
+
+  L.marker(defaultCenter, { icon: inicioIcon }).bindPopup(popupContent).addTo(mapa);
   
   // Ajustar tamaño para corregir posibles glitches de carga
   setTimeout(() => {
@@ -207,7 +239,9 @@ async function toggleAll(isChecked) {
   actualizarRutaYBotones();
 
   if (markersGroup.getLayers().length > 0) {
-    mapa.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+    const bounds = markersGroup.getBounds();
+    bounds.extend([-34.4652509, -58.5747665]);
+    mapa.fitBounds(bounds, { padding: [50, 50] });
   }
 
   toggleAllInProgress = false;
@@ -261,7 +295,9 @@ async function seleccionarPedido(id, shouldFitBounds = true) {
     updateMarkers();
     actualizarRutaYBotones();
     if (coords && markersGroup.getLayers().length > 0) {
-      mapa.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+      const bounds = markersGroup.getBounds();
+      bounds.extend([-34.4652509, -58.5747665]);
+      mapa.fitBounds(bounds, { padding: [50, 50] });
     }
   }
 
@@ -284,7 +320,9 @@ function deseleccionarPedido(id, shouldFitBounds = true) {
     updateMarkers();
     actualizarRutaYBotones();
     if (markersGroup.getLayers().length > 0) {
-      mapa.fitBounds(markersGroup.getBounds(), { padding: [50, 50] });
+      const bounds = markersGroup.getBounds();
+      bounds.extend([-34.4652509, -58.5747665]);
+      mapa.fitBounds(bounds, { padding: [50, 50] });
     }
   }
 }
@@ -357,7 +395,9 @@ function actualizarRutaYBotones() {
     routeLine = null;
   }
 
-  const coords = seleccionados.filter(s => s.geocoded).map(s => [s.lat, s.lng]);
+  // Prepend the start coordinates to include the start point in the route polyline
+  const startCoords = [-34.4652509, -58.5747665];
+  const coords = [startCoords].concat(seleccionados.filter(s => s.geocoded).map(s => [s.lat, s.lng]));
   if (coords.length > 1) {
     routeLine = L.polyline(coords, {
       color: 'var(--primary-dark)',
@@ -455,8 +495,8 @@ function obtenerUrlGoogleMaps() {
   const ultimo = seleccionados[seleccionados.length - 1];
   let destStr = ultimo.geocoded ? `${ultimo.lat},${ultimo.lng}` : encodeURIComponent(ultimo.direccion);
 
-  // Dejar origin vacío para usar ubicación GPS actual en el celular del chofer
-  let url = `https://www.google.com/maps/dir/?api=1&origin=&destination=${destStr}`;
+  // Usar coordenadas de Blanco Encalada 2384, San Fernando como origen
+  let url = `https://www.google.com/maps/dir/?api=1&origin=-34.4652509,-58.5747665&destination=${destStr}`;
   if (waypoints.length > 0) {
     url += `&waypoints=${waypoints.join('%7C')}`;
   }
@@ -479,7 +519,8 @@ function despacharWhatsApp() {
   const mapsUrl = obtenerUrlGoogleMaps();
 
   let msg = `🛵 *HOJA DE RUTA - VENTASRF*\n`;
-  msg += `📅 *Fecha:* ${fechaStr}\n\n`;
+  msg += `📅 *Fecha:* ${fechaStr}\n`;
+  msg += `🏠 *Inicio:* Blanco Encalada 2384, San Fernando\n\n`;
 
   seleccionados.forEach((s, idx) => {
     msg += `${idx + 1}️⃣ *Cliente:* ${s.nombre_cliente}\n`;

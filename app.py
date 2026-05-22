@@ -213,7 +213,8 @@ def historial_contacto():
 def listar_pedidos_envios():
     fecha = request.args.get('fecha') or None
     pedidos = models.get_all_pedidos(fecha=fecha, tipo_entrega='envio')
-    return jsonify(pedidos)
+    pedidos_pendientes = [p for p in pedidos if p['estado'] != 'Entregado']
+    return jsonify(pedidos_pendientes)
 
 
 # ── API de estadísticas y configuración ─────────────────────────────────────
