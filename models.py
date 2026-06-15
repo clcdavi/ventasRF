@@ -97,7 +97,7 @@ def _row_to_dict(row, cursor):
 
 
 def init_db():
-    ddl = """
+    ddl_pedidos = """
     CREATE TABLE IF NOT EXISTS pedidos (
         id                           SERIAL PRIMARY KEY,
         fecha_pedido                 TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -118,10 +118,21 @@ def init_db():
         fecha_actualizacion          TIMESTAMP NOT NULL DEFAULT NOW()
     );
     """
+    ddl_usuarios = """
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id                           SERIAL PRIMARY KEY,
+        nombre                       TEXT NOT NULL,
+        email                        TEXT NOT NULL UNIQUE,
+        password_hash                TEXT NOT NULL,
+        rol                          TEXT NOT NULL DEFAULT 'user',
+        created_at                   TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+    """
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            cur.execute(ddl)
+            cur.execute(ddl_pedidos)
+            cur.execute(ddl_usuarios)
             cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE")
             cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo_entrega TEXT NOT NULL DEFAULT 'envio'")
         conn.commit()
@@ -384,7 +395,9 @@ def get_stats(fecha=None):
                     COALESCE(SUM(cantidad_locro), 0) as total_locro,
                     COALESCE(SUM(cantidad_pastelito_batata), 0) as total_batata,
                     COALESCE(SUM(cantidad_pastelito_membrillo), 0) as total_membrillo,
+                    COALESCE(SUM(monto_total), 0) as recaudacion_total,
                     COALESCE(SUM(CASE WHEN pagado THEN monto_total ELSE 0 END), 0) as ingresos_totales,
+                    COALESCE(SUM(CASE WHEN NOT pagado THEN monto_total ELSE 0 END), 0) as recaudacion_pendiente,
                     COUNT(*) as total_pedidos
                 FROM pedidos
                 {where_clause}
@@ -412,7 +425,9 @@ def get_stats(fecha=None):
 
     return {
         **totales,
+        'recaudacion_cobrada': totales.get('ingresos_totales', 0),
         'ingresos_por_pago': ingresos_pago,
+        'por_medio_pago': ingresos_pago,
         'por_estado': por_estado,
     }
 
@@ -457,5 +472,66 @@ def get_historial_contacto(nombre_cliente, telefono):
         with conn.cursor() as cur:
             cur.execute(sql, (nombre_cliente, telefono))
             return [_row_to_dict(row, cur) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def create_usuario(nombre, email, password_hash, rol='user'):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            is_sqlite = 'SQLiteConnectionWrapper' in str(type(conn))
+            
+            if is_sqlite:
+                sql = """
+                INSERT INTO usuarios (nombre, email, password_hash, rol)
+                VALUES (%s, %s, %s, %s)
+                """
+                cur.execute(sql, (nombre, email, password_hash, rol))
+                cur.execute("SELECT last_insert_rowid()")
+                user_id = cur.fetchone()[0]
+                cur.execute("SELECT id, nombre, email, rol, created_at FROM usuarios WHERE id = %s", (user_id,))
+                row = cur.fetchone()
+            else:
+                sql = """
+                INSERT INTO usuarios (nombre, email, password_hash, rol)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id, nombre, email, rol, created_at
+                """
+                cur.execute(sql, (nombre, email, password_hash, rol))
+                row = cur.fetchone()
+                
+            cols = ['id', 'nombre', 'email', 'rol', 'created_at']
+            return {col: _serialize(val) for col, val in zip(cols, row)}
+    finally:
+        conn.close()
+
+
+def get_usuario_by_email(email):
+    sql = "SELECT id, nombre, email, password_hash, rol, created_at FROM usuarios WHERE email = %s"
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (email,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            cols = ['id', 'nombre', 'email', 'password_hash', 'rol', 'created_at']
+            return {col: _serialize(val) for col, val in zip(cols, row)}
+    finally:
+        conn.close()
+
+
+def get_usuario_by_id(user_id):
+    sql = "SELECT id, nombre, email, rol, created_at FROM usuarios WHERE id = %s"
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, (user_id,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            cols = ['id', 'nombre', 'email', 'rol', 'created_at']
+            return {col: _serialize(val) for col, val in zip(cols, row)}
     finally:
         conn.close()

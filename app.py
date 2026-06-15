@@ -1,6 +1,10 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
+import jwt
+from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
@@ -12,6 +16,26 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 app = Flask(__name__)
+
+# Clave secreta para firmar tokens
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret-key-para-ventas-rf'
+
+def generar_token(user_id):
+    payload = {
+        'exp': datetime.utcnow() + timedelta(days=30),
+        'iat': datetime.utcnow(),
+        'sub': user_id
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+def obtener_usuario_desde_token(token):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        return payload['sub']
+    except jwt.ExpiredSignatureError:
+        return 'token_expirado'
+    except jwt.InvalidTokenError:
+        return 'token_invalido'
 
 # ── Inicializar base de datos al arrancar ────────────────────────────────────
 with app.app_context():
@@ -337,6 +361,107 @@ def exportar_excel():
     )
 
 
+# ── Rutas de Autenticación ───────────────────────────────────────────────────
+
+@app.route('/api/auth/register', methods=['POST'])
+def register_user():
+    data = request.get_json() or {}
+    nombre = data.get('nombre') or data.get('name')
+    email = data.get('email')
+    password = data.get('contrasenia') or data.get('password')
+    
+    if not nombre or not email or not password:
+        return jsonify({'error': 'Nombre, email y contraseña son obligatorios.'}), 400
+        
+    nombre = nombre.strip()
+    email = email.strip().lower()
+    
+    # Validar formato de email
+    import re
+    if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
+        return jsonify({'error': 'El formato del email es inválido.'}), 400
+        
+    if len(password) < 6:
+        return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres.'}), 400
+        
+    # Verificar si el usuario ya existe
+    existing_user = models.get_usuario_by_email(email)
+    if existing_user:
+        return jsonify({'error': 'El correo electrónico ya está registrado.'}), 400
+        
+    # Crear hash de la contraseña
+    password_hash = generate_password_hash(password)
+    
+    try:
+        user = models.create_usuario(nombre, email, password_hash)
+        token = generar_token(user['id'])
+        return jsonify({
+            'token': token,
+            'user': {
+                'id': user['id'],
+                'nombre': user['nombre'],
+                'email': user['email'],
+                'rol': user.get('rol', 'user')
+            }
+        }), 201
+    except Exception as e:
+        return jsonify({'error': f'Error al registrar el usuario: {str(e)}'}), 500
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login_user():
+    data = request.get_json() or {}
+    email = data.get('email')
+    password = data.get('contrasenia') or data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email y contraseña son obligatorios.'}), 400
+        
+    email = email.strip().lower()
+    
+    # Buscar usuario
+    user = models.get_usuario_by_email(email)
+    if not user:
+        return jsonify({'error': 'Credenciales inválidas.'}), 401
+        
+    # Verificar contraseña
+    if not check_password_hash(user['password_hash'], password):
+        return jsonify({'error': 'Credenciales inválidas.'}), 401
+        
+    token = generar_token(user['id'])
+    return jsonify({
+        'token': token,
+        'user': {
+            'id': user['id'],
+            'nombre': user['nombre'],
+            'email': user['email'],
+            'rol': user.get('rol', 'user')
+        }
+    }), 200
+
+
+@app.route('/api/auth/me', methods=['GET'])
+def get_current_user():
+    token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            
+    if not token:
+        return jsonify({'error': 'Token de autenticación faltante.'}), 401
+        
+    user_id = obtener_usuario_desde_token(token)
+    if user_id in ('token_expirado', 'token_invalido'):
+        return jsonify({'error': 'Token inválido o expirado.'}), 401
+        
+    current_user = models.get_usuario_by_id(user_id)
+    if not current_user:
+        return jsonify({'error': 'Usuario no encontrado.'}), 401
+        
+    return jsonify(current_user)
+
+
 # ── Arranque ─────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080)
