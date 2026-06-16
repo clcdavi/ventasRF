@@ -6,6 +6,8 @@ import jwt
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
                     PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD)
@@ -438,6 +440,57 @@ def login_user():
             'rol': user.get('rol', 'user')
         }
     }), 200
+
+
+ALLOWED_CLIENT_IDS = [
+    '470092085691-g3qhlkdmgu2gkrj2qt6o428ja146e7t8.apps.googleusercontent.com', # Web
+    '470092085691-hgphb8kuueta7bs70a284af80skvk1vq.apps.googleusercontent.com', # Android
+    '470092085691-3s97ong1eao7ja6ae329h99muj9hh8ca.apps.googleusercontent.com'  # iOS
+]
+
+@app.route('/api/auth/google', methods=['POST'])
+def google_login_user():
+    data = request.get_json() or {}
+    id_token_str = data.get('idToken')
+    if not id_token_str:
+        return jsonify({'error': 'Token de Google faltante.'}), 400
+
+    try:
+        request_transport = google_requests.Request()
+        idinfo = id_token.verify_oauth2_token(id_token_str, request_transport)
+        
+        # Verificar que el cliente de origen esté en el listado de permitidos
+        if idinfo.get('aud') not in ALLOWED_CLIENT_IDS:
+            return jsonify({'error': 'Token de Google no está autorizado para esta aplicación.'}), 401
+            
+        email = idinfo.get('email')
+        nombre = idinfo.get('name') or idinfo.get('given_name') or 'Usuario de Google'
+        
+        if not email:
+            return jsonify({'error': 'No se pudo obtener el correo de Google.'}), 400
+            
+        email = email.strip().lower()
+        
+        # Buscar o registrar usuario
+        user = models.get_usuario_by_email(email)
+        if not user:
+            user = models.create_usuario(nombre, email, 'google_oauth', 'user')
+            
+        token = generar_token(user['id'])
+        return jsonify({
+            'token': token,
+            'user': {
+                'id': user['id'],
+                'nombre': user['nombre'],
+                'email': user['email'],
+                'rol': user.get('rol', 'user')
+            }
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Token de Google inválido: {str(e)}'}), 401
+    except Exception as e:
+        return jsonify({'error': f'Error al autenticar con Google: {str(e)}'}), 500
 
 
 @app.route('/api/auth/me', methods=['GET'])
