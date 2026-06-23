@@ -180,7 +180,7 @@ export default function LoginScreen() {
           styles.formContainer,
           {
             opacity: formFadeIn,
-            transform: [{ translateY: Animated.add(formSlideUp, formFloatTranslateY) }],
+            transform: [{ translateY: formSlideUp }],
           },
           Platform.OS === 'ios' ? {
             shadowOpacity: glowShadowOpacity,
