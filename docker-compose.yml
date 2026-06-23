@@ -40,7 +40,7 @@ services:
     ports:
       - "80:80" # Expone la app móvil web en el puerto 80 del VPS
     volumes:
-      - ./frontend_dist:/usr/share/nginx/html
+      - ./mobile/dist:/usr/share/nginx/html
 
 volumes:
   postgres_data:
