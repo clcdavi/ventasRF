@@ -43,17 +43,17 @@ export default function LoginScreen() {
   const formSlideUp = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    // Logo badge: flotación suave e infinita (sube y baja 6px)
+    // Logo badge: flotación suave e infinita (sube y baja 18px)
     Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
           toValue: 1,
-          duration: 2800,
+          duration: 2200,
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim, {
           toValue: 0,
-          duration: 2800,
+          duration: 2200,
           useNativeDriver: true,
         }),
       ])
@@ -94,12 +94,17 @@ export default function LoginScreen() {
 
   const floatTranslateY = floatAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -6],
+    outputRange: [0, -18],
   });
 
   const floatScale = floatAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.04, 1],
+    outputRange: [1, 1.08, 1],
+  });
+
+  const formFloatTranslateY = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8],
   });
 
   const glowShadowOpacity = glowAnim.interpolate({
@@ -175,7 +180,7 @@ export default function LoginScreen() {
           styles.formContainer,
           {
             opacity: formFadeIn,
-            transform: [{ translateY: formSlideUp }],
+            transform: [{ translateY: Animated.add(formSlideUp, formFloatTranslateY) }],
           },
           Platform.OS === 'ios' ? {
             shadowOpacity: glowShadowOpacity,
