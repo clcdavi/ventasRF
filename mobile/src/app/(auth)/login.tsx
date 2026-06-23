@@ -258,33 +258,6 @@ export default function LoginScreen() {
             )}
           </Pressable>
 
-          {/* Separador */}
-          <View style={styles.separatorContainer}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.separatorText}>o</Text>
-            <View style={styles.separatorLine} />
-          </View>
-
-          {/* Botón Google */}
-          <Pressable
-            onPress={handleGoogleLogin}
-            disabled={isLoading}
-            style={({ pressed }) => [
-              styles.googleButton,
-              pressed && styles.buttonPressed,
-              isLoading && styles.googleButtonDisabled
-            ]}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#4F46E5" />
-            ) : (
-              <>
-                <GoogleIcon width={18} height={18} style={{ marginRight: 10 }} />
-                <Text style={styles.googleButtonText}>Continuar con Google</Text>
-              </>
-            )}
-          </Pressable>
-
           {/* Enlace a Registro */}
           <View style={styles.footerLinks}>
             <Text style={styles.footerText}>¿No tienes cuenta? </Text>
