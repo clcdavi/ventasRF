@@ -115,6 +115,7 @@ def init_db():
         estado                       TEXT NOT NULL DEFAULT 'Pendiente',
         pagado                       BOOLEAN NOT NULL DEFAULT FALSE,
         tipo_entrega                 TEXT NOT NULL DEFAULT 'envio',
+        usuario_id                   INTEGER REFERENCES usuarios(id),
         fecha_actualizacion          TIMESTAMP NOT NULL DEFAULT NOW()
     );
     """
@@ -131,10 +132,11 @@ def init_db():
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            cur.execute(ddl_pedidos)
             cur.execute(ddl_usuarios)
+            cur.execute(ddl_pedidos)
             cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE")
             cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo_entrega TEXT NOT NULL DEFAULT 'envio'")
+            cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS usuario_id INTEGER REFERENCES usuarios(id)")
         conn.commit()
     finally:
         conn.close()
@@ -165,13 +167,38 @@ def create_pedido(data):
     pagado       = data.get('pagado') in (True, 'true', '1', 'on')
     tipo_entrega = data.get('tipo_entrega', 'envio')
     fecha_pedido = data.get('fecha_pedido', '').strip() or None
+    usuario_id   = data.get('usuario_id')
 
     if fecha_pedido:
         sql = """
         INSERT INTO pedidos
             (nombre_cliente, telefono, email, direccion,
              cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
-             medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega, fecha_pedido)
+             medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega, fecha_pedido, usuario_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """
+        params = (
+            data['nombre_cliente'].strip(),
+            data['telefono'].strip(),
+            data.get('email', '').strip() or None,
+            data['direccion'].strip(),
+            qty_locro, qty_batata, qty_membrillo,
+            data['medio_pago'],
+            monto_total,
+            data.get('horario_entrega', '').strip() or None,
+            data.get('notes', '').strip() or data.get('notas', '').strip() or None,
+            pagado,
+            tipo_entrega,
+            fecha_pedido,
+            usuario_id
+        )
+    else:
+        sql = """
+        INSERT INTO pedidos
+            (nombre_cliente, telefono, email, direccion,
+             cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
+             medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega, usuario_id)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """
@@ -184,32 +211,10 @@ def create_pedido(data):
             data['medio_pago'],
             monto_total,
             data.get('horario_entrega', '').strip() or None,
-            data.get('notas', '').strip() or None,
+            data.get('notes', '').strip() or data.get('notas', '').strip() or None,
             pagado,
             tipo_entrega,
-            fecha_pedido
-        )
-    else:
-        sql = """
-        INSERT INTO pedidos
-            (nombre_cliente, telefono, email, direccion,
-             cantidad_locro, cantidad_pastelito_batata, cantidad_pastelito_membrillo,
-             medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING id
-        """
-        params = (
-            data['nombre_cliente'].strip(),
-            data['telefono'].strip(),
-            data.get('email', '').strip() or None,
-            data['direccion'].strip(),
-            qty_locro, qty_batata, qty_membrillo,
-            data['medio_pago'],
-            monto_total,
-            data.get('horario_entrega', '').strip() or None,
-            data.get('notas', '').strip() or None,
-            pagado,
-            tipo_entrega
+            usuario_id
         )
     conn = get_db()
     try:
@@ -258,6 +263,16 @@ def get_pedido_by_id(pedido_id):
             cur.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
             row = cur.fetchone()
             return _row_to_dict(row, cur) if row else None
+    finally:
+        conn.close()
+
+
+def get_pedidos_by_usuario(user_id):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM pedidos WHERE usuario_id = %s ORDER BY fecha_pedido DESC", (user_id,))
+            return [_row_to_dict(row, cur) for row in cur.fetchall()]
     finally:
         conn.close()
 

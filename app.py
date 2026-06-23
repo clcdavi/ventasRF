@@ -10,7 +10,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
-                    PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD)
+                    PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD,
+                    CODIGO_ADMIN, CODIGO_REPARTIDOR)
 import models
 import io
 from openpyxl import Workbook
@@ -38,6 +39,19 @@ def obtener_usuario_desde_token(token):
         return 'token_expirado'
     except jwt.InvalidTokenError:
         return 'token_invalido'
+
+def obtener_usuario_id_opcional():
+    token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+    if not token:
+        return None
+    user_id = obtener_usuario_desde_token(token)
+    if user_id in ('token_expirado', 'token_invalido'):
+        return None
+    return user_id
 
 # ── Inicializar base de datos al arrancar ────────────────────────────────────
 with app.app_context():
@@ -145,6 +159,10 @@ def crear_pedido():
     if errores:
         return jsonify({'errores': errores}), 400
 
+    user_id = obtener_usuario_id_opcional()
+    if user_id:
+        data['usuario_id'] = user_id
+
     pedido_id, monto_total = models.create_pedido(data)
     return jsonify({'ok': True, 'id': pedido_id, 'monto_total': monto_total}), 201
 
@@ -157,6 +175,15 @@ def listar_pedidos():
     busqueda   = request.args.get('q') or None
     tipo_entrega = request.args.get('tipo_entrega') or None
     pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega)
+    return jsonify(pedidos)
+
+
+@app.route('/api/pedidos/mis-pedidos', methods=['GET'])
+def listar_mis_pedidos():
+    user_id = obtener_usuario_id_opcional()
+    if not user_id:
+        return jsonify({'error': 'No autorizado.'}), 401
+    pedidos = models.get_pedidos_by_usuario(user_id)
     return jsonify(pedidos)
 
 
@@ -371,31 +398,43 @@ def register_user():
     nombre = data.get('nombre') or data.get('name')
     email = data.get('email')
     password = data.get('contrasenia') or data.get('password')
+    codigo_staff = data.get('codigo_staff') or data.get('codigoStaff')
     
     if not nombre or not email or not password:
         return jsonify({'error': 'Nombre, email y contraseña son obligatorios.'}), 400
         
-    nombre = nombre.strip()
-    email = email.strip().lower()
+    nombre = str(nombre).strip()
+    email = str(email).strip().lower()
     
     # Validar formato de email
     import re
     if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
         return jsonify({'error': 'El formato del email es inválido.'}), 400
         
-    if len(password) < 6:
+    if len(str(password)) < 6:
         return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres.'}), 400
         
+    # Determinar rol según el código de staff
+    rol = 'customer'
+    if codigo_staff:
+        codigo_staff = str(codigo_staff).strip()
+        if codigo_staff == CODIGO_ADMIN:
+            rol = 'admin'
+        elif codigo_staff == CODIGO_REPARTIDOR:
+            rol = 'repartidor'
+        else:
+            return jsonify({'error': 'Código de Staff inválido.'}), 400
+
     # Verificar si el usuario ya existe
     existing_user = models.get_usuario_by_email(email)
     if existing_user:
         return jsonify({'error': 'El correo electrónico ya está registrado.'}), 400
         
     # Crear hash de la contraseña
-    password_hash = generate_password_hash(password)
+    password_hash = generate_password_hash(str(password))
     
     try:
-        user = models.create_usuario(nombre, email, password_hash)
+        user = models.create_usuario(nombre, email, password_hash, rol)
         token = generar_token(user['id'])
         return jsonify({
             'token': token,
@@ -419,7 +458,7 @@ def login_user():
     if not email or not password:
         return jsonify({'error': 'Email y contraseña son obligatorios.'}), 400
         
-    email = email.strip().lower()
+    email = str(email).strip().lower()
     
     # Buscar usuario
     user = models.get_usuario_by_email(email)
@@ -427,7 +466,7 @@ def login_user():
         return jsonify({'error': 'Credenciales inválidas.'}), 401
         
     # Verificar contraseña
-    if not check_password_hash(user['password_hash'], password):
+    if not check_password_hash(user['password_hash'], str(password)):
         return jsonify({'error': 'Credenciales inválidas.'}), 401
         
     token = generar_token(user['id'])
