@@ -55,17 +55,6 @@ El proyecto está dockerizado para facilitar su puesta en marcha en servidores p
    ```
    La aplicación se expondrá en el puerto configurado (por defecto `8081`). Puedes acceder en: `http://<IP_DE_TU_VM>:8081`.
 
----
-
-## Migración de Datos desde Render
-
-Si tienes pedidos registrados en la plataforma antigua de Render y quieres transferirlos a tu base de datos nueva en Oracle Cloud, puedes hacerlo de forma automática ejecutando el script de migración dentro del contenedor web:
-
-```bash
-docker-compose exec web python migrate_data.py
-```
-
-Este script traerá todos los pedidos antiguos desde el endpoint de Render e importará/actualizará en el PostgreSQL local de forma segura (haciendo un *UPSERT* para evitar duplicados).
 
 ---
 

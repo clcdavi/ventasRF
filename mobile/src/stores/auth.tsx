@@ -142,8 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(data.token);
         setUser(data.user);
         
-        await SecureStore.setItemAsync('authToken', data.token);
-        await SecureStore.setItemAsync('authUser', JSON.stringify(data.user));
+        await storage.setItem('authToken', data.token);
+        await storage.setItem('authUser', JSON.stringify(data.user));
       } else {
         throw { code: 'SIGN_IN_CANCELLED', message: 'Inicio de sesión cancelado por el usuario.' };
       }

@@ -9,8 +9,6 @@ import {
   KeyboardAvoidingView, 
   Platform, 
   ScrollView, 
-  TouchableWithoutFeedback, 
-  Keyboard 
 } from 'react-native';
 import { Link } from 'expo-router';
 import { useAuth } from '../../stores/auth';
