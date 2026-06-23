@@ -175,4 +175,12 @@ export const api = {
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     return fetchJson<User>('/api/auth/me', { headers });
   },
+
+  // Cambiar rol ingresando un código de staff
+  upgradeRole: (codigo: string) => {
+    return fetchJson<{ ok: boolean; user: User; message: string }>('/api/auth/upgrade-role', {
+      method: 'POST',
+      body: JSON.stringify({ codigo }),
+    });
+  },
 };

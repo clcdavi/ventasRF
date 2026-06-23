@@ -550,3 +550,19 @@ def get_usuario_by_id(user_id):
             return {col: _serialize(val) for col, val in zip(cols, row)}
     finally:
         conn.close()
+
+
+def update_usuario_rol(user_id, nuevo_rol):
+    """Actualiza el rol de un usuario existente."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE usuarios SET rol = %s WHERE id = %s",
+                (nuevo_rol, user_id)
+            )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+

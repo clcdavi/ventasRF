@@ -557,6 +557,52 @@ def get_current_user():
     return jsonify(current_user)
 
 
+@app.route('/api/auth/upgrade-role', methods=['POST'])
+def upgrade_role():
+    """Permite a un usuario cambiar su rol ingresando un código de staff."""
+    # Verificar autenticación
+    token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+    
+    if not token:
+        return jsonify({'error': 'Token de autenticación faltante.'}), 401
+    
+    user_id = obtener_usuario_desde_token(token)
+    if user_id in ('token_expirado', 'token_invalido'):
+        return jsonify({'error': 'Token inválido o expirado.'}), 401
+
+    data = request.get_json() or {}
+    codigo = data.get('codigo', '').strip()
+
+    if not codigo:
+        return jsonify({'error': 'Debes ingresar un código de Staff.'}), 400
+
+    # Determinar el nuevo rol
+    nuevo_rol = None
+    if codigo == CODIGO_ADMIN:
+        nuevo_rol = 'admin'
+    elif codigo == CODIGO_REPARTIDOR:
+        nuevo_rol = 'repartidor'
+    else:
+        return jsonify({'error': 'Código de Staff inválido.'}), 400
+
+    # Actualizar el rol en la base de datos
+    ok = models.update_usuario_rol(user_id, nuevo_rol)
+    if not ok:
+        return jsonify({'error': 'No se pudo actualizar el rol.'}), 500
+
+    # Devolver el usuario actualizado
+    updated_user = models.get_usuario_by_id(user_id)
+    return jsonify({
+        'ok': True,
+        'user': updated_user,
+        'message': f'Tu rol ha sido actualizado a {nuevo_rol}.'
+    })
+
+
 # ── Arranque ─────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)

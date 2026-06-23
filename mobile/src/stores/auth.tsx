@@ -23,6 +23,7 @@ interface AuthContextType {
   signUp: (nombre: string, email: string, contrasenia: string, codigoStaff?: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (updatedUser: User) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -181,6 +182,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function updateUser(updatedUser: User) {
+    setUser(updatedUser);
+    await storage.setItem('authUser', JSON.stringify(updatedUser));
+  }
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' }}>
@@ -190,7 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, token, isLoading, signIn, signUp, signInWithGoogle, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

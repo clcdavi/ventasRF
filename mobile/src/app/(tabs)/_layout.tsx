@@ -14,7 +14,7 @@ export default function TabLayout() {
       return true;
     }
     if (role === 'repartidor') {
-      return tabName === 'envios';
+      return tabName !== 'stats';
     }
     // customer / cliente
     return tabName === 'index' || tabName === 'pedidos';

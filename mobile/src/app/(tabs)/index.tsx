@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { 
@@ -20,9 +20,37 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
 
 export default function DashboardScreen() {
-  const { user, signOut } = useAuth();
-  const isCustomer = user?.rol === 'customer' || user?.rol === 'user';
+  const { user, signOut, updateUser } = useAuth();
+  const [viewAsCustomer, setViewAsCustomer] = useState(false);
+  const isCustomer = user?.rol === 'customer' || user?.rol === 'user' || viewAsCustomer;
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Preselección 25 de Mayo
+  
+  // Estados para activar código staff
+  const [staffCode, setStaffCode] = useState('');
+  const [upgrading, setUpgrading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleUpgradeRole = async () => {
+    if (!staffCode.trim()) {
+      setErrorMsg('Debes ingresar un código.');
+      return;
+    }
+    setErrorMsg('');
+    setSuccessMsg('');
+    setUpgrading(true);
+    try {
+      const res = await api.upgradeRole(staffCode.trim());
+      setSuccessMsg(res.message);
+      setStaffCode('');
+      // Actualizar el estado de usuario global
+      await updateUser(res.user);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Código incorrecto o error al actualizar.');
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   const { data: stats, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['stats', selectedDate],
@@ -64,6 +92,17 @@ export default function DashboardScreen() {
             <Text style={styles.headerTitle}>Ventas RF</Text>
           </View>
           <View style={styles.headerActions}>
+            {(user?.rol === 'admin' || user?.rol === 'repartidor') && (
+              <Pressable
+                onPress={() => setViewAsCustomer(false)}
+                style={({ pressed }) => [
+                  styles.toggleViewButton,
+                  pressed && styles.buttonPressed
+                ]}
+              >
+                <Text style={styles.toggleViewButtonText}>Volver a Gestión</Text>
+              </Pressable>
+            )}
             <Pressable 
               onPress={() => refetchPedidos()} 
               style={({ pressed }) => [
@@ -205,6 +244,44 @@ export default function DashboardScreen() {
                 ))}
             </View>
           )}
+
+          {/* Activar código Staff si es cliente real */}
+          {(user?.rol === 'customer' || user?.rol === 'user') && (
+            <View style={styles.staffCard}>
+              <Text style={styles.staffTitle}>¿Eres parte del Staff?</Text>
+              <Text style={styles.staffDesc}>
+                Ingresa el código de Staff provisto para activar tus funciones de Administrador o Repartidor.
+              </Text>
+              <View style={styles.staffInputRow}>
+                <TextInput
+                  style={styles.staffInput}
+                  placeholder="Código de Staff"
+                  placeholderTextColor="#94A3B8"
+                  value={staffCode}
+                  onChangeText={setStaffCode}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+                <Pressable
+                  onPress={handleUpgradeRole}
+                  disabled={upgrading}
+                  style={({ pressed }) => [
+                    styles.staffButton,
+                    pressed && styles.buttonPressed,
+                    upgrading && { opacity: 0.7 }
+                  ]}
+                >
+                  {upgrading ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.staffButtonText}>Activar</Text>
+                  )}
+                </Pressable>
+              </View>
+              {errorMsg ? <Text style={styles.staffErrorMsg}>{errorMsg}</Text> : null}
+              {successMsg ? <Text style={styles.staffSuccessMsg}>{successMsg}</Text> : null}
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -225,6 +302,15 @@ export default function DashboardScreen() {
           <Text style={styles.headerTitle}>Resumen General</Text>
         </View>
         <View style={styles.headerActions}>
+          <Pressable
+            onPress={() => setViewAsCustomer(true)}
+            style={({ pressed }) => [
+              styles.toggleViewButton,
+              pressed && styles.buttonPressed
+            ]}
+          >
+            <Text style={styles.toggleViewButtonText}>Vista Cliente</Text>
+          </Pressable>
           <Pressable 
             onPress={() => refetch()} 
             style={({ pressed }) => [
@@ -1056,5 +1142,96 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 2,
     textTransform: 'uppercase',
-  }
+  },
+  toggleViewButton: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+  },
+  toggleViewButtonText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4F46E5',
+    textTransform: 'uppercase',
+  },
+  staffCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 40,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
+  },
+  staffTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  staffDesc: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  staffInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  staffInput: {
+    flex: 1,
+    height: 38,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 12,
+    color: '#1E293B',
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  staffButton: {
+    height: 38,
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  staffButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  staffErrorMsg: {
+    color: '#EF4444',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  staffSuccessMsg: {
+    color: '#10B981',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 8,
+  },
 });
