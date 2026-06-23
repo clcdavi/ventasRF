@@ -134,7 +134,7 @@ def editar_pedido_form(pedido_id):
     return render_template('editar_pedido.html', pedido=pedido, estados=ESTADOS)
 
 
-@app.route('/pedidos/<int:pedido_id>/editar', methods=['POST'])
+@app.route('/api/pedidos/<int:pedido_id>/editar', methods=['POST'])
 def editar_pedido_submit(pedido_id):
     pedido = models.get_pedido_by_id(pedido_id)
     if not pedido:
@@ -155,7 +155,7 @@ def editar_pedido_submit(pedido_id):
 
 # ── API de pedidos ───────────────────────────────────────────────────────────
 
-@app.route('/pedidos', methods=['POST'])
+@app.route('/api/pedidos', methods=['POST'])
 def crear_pedido():
     data = request.get_json() or request.form.to_dict()
     errores = validar_pedido(data)

@@ -69,7 +69,7 @@ export const api = {
 
   // Crear un pedido
   crearPedido: (pedido: Omit<Pedido, 'id' | 'monto_total'>) => {
-    return fetchJson<{ ok: boolean; id: number; monto_total: number }>('/pedidos', {
+    return fetchJson<{ ok: boolean; id: number; monto_total: number }>('/api/pedidos', {
       method: 'POST',
       body: JSON.stringify(pedido),
     });
@@ -77,7 +77,7 @@ export const api = {
 
   // Editar un pedido completo
   editarPedido: (id: number, pedido: Partial<Pedido>) => {
-    return fetchJson<{ ok: boolean; monto_total: number }>(`/pedidos/${id}/editar`, {
+    return fetchJson<{ ok: boolean; monto_total: number }>(`/api/pedidos/${id}/editar`, {
       method: 'POST',
       body: JSON.stringify(pedido),
     });

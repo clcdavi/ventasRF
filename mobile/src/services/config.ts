@@ -11,7 +11,8 @@ const getBackendUrl = () => {
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return 'http://localhost:8080';
       }
-      return `http://${hostname}:8081`;
+      // Al usar una cadena vacía, el navegador usará la ruta relativa (http://137.../api/)
+      return '';
     }
   }
 
