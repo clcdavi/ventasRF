@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -8,7 +8,7 @@ import {
   ActivityIndicator, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView, 
+  Animated,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { useAuth } from '../../stores/auth';
@@ -36,6 +36,82 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // ── Animaciones de flotación ──────────────────────────────────────────
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const formFadeIn = useRef(new Animated.Value(0)).current;
+  const formSlideUp = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    // Logo badge: flotación suave e infinita (sube y baja 6px)
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 2800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 2800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Glow pulsante sutil en la sombra del formulario
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 3200,
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 3200,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+
+    // Entrada del formulario (fade in + slide up)
+    Animated.parallel([
+      Animated.timing(formFadeIn, {
+        toValue: 1,
+        duration: 800,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formSlideUp, {
+        toValue: 0,
+        duration: 800,
+        delay: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const floatTranslateY = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -6],
+  });
+
+  const floatScale = floatAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.04, 1],
+  });
+
+  const glowShadowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.04, 0.12],
+  });
+
+  const glowShadowRadius = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [12, 28],
+  });
+
   const handleLogin = async () => {
     if (!email || !password) {
       setError('Por favor, completa todos los campos.');
@@ -59,7 +135,6 @@ export default function LoginScreen() {
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      // Si es cancelación del usuario, no mostramos error como alerta
       if (err?.code === 'SIGN_IN_CANCELLED' || err?.message?.includes('Sign in action cancelled')) {
         console.log('[Google Sign-In] Cancelado por el usuario');
         return;
@@ -74,134 +149,147 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={{ flex: 1 }}
+        style={styles.centered}
       >
-          <ScrollView 
-            contentContainerStyle={styles.scrollContent} 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Cabecera de Marca */}
-            <View style={styles.brandContainer}>
-              <View style={styles.logoBadge}>
-                <Text style={styles.logoText}>RF</Text>
-              </View>
-              <Text style={styles.brandTitle}>PedidosRF</Text>
-              <Text style={styles.brandSubtitle}>Ingresa tus credenciales para administrar tus pedidos.</Text>
-            </View>
+        {/* Cabecera de Marca con efecto de flotación */}
+        <View style={styles.brandContainer}>
+          <Animated.View style={[
+            styles.logoBadge,
+            {
+              transform: [
+                { translateY: floatTranslateY },
+                { scale: floatScale },
+              ],
+            },
+          ]}>
+            <Text style={styles.logoText}>RF</Text>
+          </Animated.View>
+          <Text style={styles.brandTitle}>PedidosRF</Text>
+          <Text style={styles.brandSubtitle}>
+            Ingresa tus credenciales para administrar tus pedidos.
+          </Text>
+        </View>
 
-            {/* Formulario de Login */}
-            <View style={styles.formContainer}>
-              {error && (
-                <View style={styles.errorAlert}>
-                  <AlertCircle size={16} color="#EF4444" style={{ marginRight: 8 }} />
-                  <Text style={styles.errorAlertText}>{error}</Text>
-                </View>
+        {/* Formulario con fade-in, slide-up y glow pulsante */}
+        <Animated.View style={[
+          styles.formContainer,
+          {
+            opacity: formFadeIn,
+            transform: [{ translateY: formSlideUp }],
+          },
+          Platform.OS === 'ios' ? {
+            shadowOpacity: glowShadowOpacity,
+            shadowRadius: glowShadowRadius,
+          } : undefined,
+        ]}>
+          {error && (
+            <View style={styles.errorAlert}>
+              <AlertCircle size={16} color="#EF4444" style={{ marginRight: 8 }} />
+              <Text style={styles.errorAlertText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Input Email */}
+          <Text style={styles.inputLabel}>Correo Electrónico</Text>
+          <View style={styles.inputWrapper}>
+            <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="ejemplo@correo.com"
+              placeholderTextColor="#94A3B8"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (error) setError(null);
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+          </View>
+
+          {/* Input Contraseña */}
+          <Text style={styles.inputLabel}>Contraseña</Text>
+          <View style={styles.inputWrapper}>
+            <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { paddingRight: 45 }]}
+              placeholder="••••••••"
+              placeholderTextColor="#94A3B8"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (error) setError(null);
+              }}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+            />
+            <Pressable 
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              {showPassword ? (
+                <EyeOff size={18} color="#64748B" />
+              ) : (
+                <Eye size={18} color="#64748B" />
               )}
+            </Pressable>
+          </View>
 
-              {/* Input Email */}
-              <Text style={styles.inputLabel}>Correo Electrónico</Text>
-              <View style={styles.inputWrapper}>
-                <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="ejemplo@correo.com"
-                  placeholderTextColor="#94A3B8"
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (error) setError(null);
-                  }}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
-                />
-              </View>
+          {/* Botón de Submit */}
+          <Pressable
+            onPress={handleLogin}
+            disabled={isLoading}
+            style={({ pressed }) => [
+              styles.submitButton,
+              pressed && styles.buttonPressed,
+              isLoading && styles.submitButtonDisabled
+            ]}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
+            )}
+          </Pressable>
 
-              {/* Input Contraseña */}
-              <Text style={styles.inputLabel}>Contraseña</Text>
-              <View style={styles.inputWrapper}>
-                <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { paddingRight: 45 }]}
-                  placeholder="••••••••"
-                  placeholderTextColor="#94A3B8"
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (error) setError(null);
-                  }}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <Pressable 
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  {showPassword ? (
-                    <EyeOff size={18} color="#64748B" />
-                  ) : (
-                    <Eye size={18} color="#64748B" />
-                  )}
-                </Pressable>
-              </View>
+          {/* Separador */}
+          <View style={styles.separatorContainer}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.separatorText}>o</Text>
+            <View style={styles.separatorLine} />
+          </View>
 
-              {/* Botón de Submit */}
-              <Pressable
-                onPress={handleLogin}
-                disabled={isLoading}
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  pressed && styles.buttonPressed,
-                  isLoading && styles.submitButtonDisabled
-                ]}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
-                )}
+          {/* Botón Google */}
+          <Pressable
+            onPress={handleGoogleLogin}
+            disabled={isLoading}
+            style={({ pressed }) => [
+              styles.googleButton,
+              pressed && styles.buttonPressed,
+              isLoading && styles.googleButtonDisabled
+            ]}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#4F46E5" />
+            ) : (
+              <>
+                <GoogleIcon width={18} height={18} style={{ marginRight: 10 }} />
+                <Text style={styles.googleButtonText}>Continuar con Google</Text>
+              </>
+            )}
+          </Pressable>
+
+          {/* Enlace a Registro */}
+          <View style={styles.footerLinks}>
+            <Text style={styles.footerText}>¿No tienes cuenta? </Text>
+            <Link href="/(auth)/register" asChild>
+              <Pressable style={({ pressed }) => pressed && styles.linkPressed}>
+                <Text style={styles.linkText}>Regístrate aquí</Text>
               </Pressable>
-
-              {/* Separador */}
-              <View style={styles.separatorContainer}>
-                <View style={styles.separatorLine} />
-                <Text style={styles.separatorText}>o</Text>
-                <View style={styles.separatorLine} />
-              </View>
-
-              {/* Botón Google */}
-              <Pressable
-                onPress={handleGoogleLogin}
-                disabled={isLoading}
-                style={({ pressed }) => [
-                  styles.googleButton,
-                  pressed && styles.buttonPressed,
-                  isLoading && styles.googleButtonDisabled
-                ]}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#4F46E5" />
-                ) : (
-                  <>
-                    <GoogleIcon width={18} height={18} style={{ marginRight: 10 }} />
-                    <Text style={styles.googleButtonText}>Continuar con Google</Text>
-                  </>
-                )}
-              </Pressable>
-
-              {/* Enlace a Registro */}
-              <View style={styles.footerLinks}>
-                <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-                <Link href="/(auth)/register" asChild>
-                  <Pressable style={({ pressed }) => pressed && styles.linkPressed}>
-                    <Text style={styles.linkText}>Regístrate aquí</Text>
-                  </Pressable>
-                </Link>
-              </View>
-            </View>
-
-          </ScrollView>
+            </Link>
+          </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -212,20 +300,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  scrollContent: {
-    flexGrow: 1,
+  centered: {
+    flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 40,
   },
   brandContainer: {
     alignItems: 'center',
-    marginBottom: 36,
+    marginBottom: 32,
   },
   logoBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
+    width: 68,
+    height: 68,
+    borderRadius: 20,
     backgroundColor: '#4F46E5',
     justifyContent: 'center',
     alignItems: 'center',
@@ -233,23 +320,23 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#4F46E5',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 4,
+        elevation: 8,
       },
     }),
   },
   logoText: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '900',
     letterSpacing: -1,
   },
   brandTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: -0.5,
@@ -270,13 +357,13 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     ...Platform.select({
       ios: {
-        shadowColor: '#000000',
+        shadowColor: '#4F46E5',
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.03,
-        shadowRadius: 16,
+        shadowOpacity: 0.06,
+        shadowRadius: 20,
       },
       android: {
-        elevation: 2,
+        elevation: 4,
       },
     }),
   },
@@ -312,7 +399,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 14,
-    marginBottom: 20,
+    marginBottom: 18,
   },
   inputIcon: {
     position: 'absolute',
@@ -339,16 +426,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 6,
     ...Platform.select({
       ios: {
         shadowColor: '#4F46E5',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
       },
       android: {
-        elevation: 2,
+        elevation: 3,
       },
     }),
   },
@@ -368,7 +455,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 18,
   },
   footerText: {
     fontSize: 13,
@@ -385,7 +472,7 @@ const styles = StyleSheet.create({
   separatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 18,
+    marginVertical: 16,
   },
   separatorLine: {
     flex: 1,
