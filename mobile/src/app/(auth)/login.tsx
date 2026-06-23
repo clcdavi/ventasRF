@@ -322,6 +322,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    backfaceVisibility: 'hidden',
+    ...(Platform.OS === 'web' ? { willChange: 'transform' } : {}),
     ...Platform.select({
       ios: {
         shadowColor: '#4F46E5',
@@ -332,6 +334,12 @@ const styles = StyleSheet.create({
       android: {
         elevation: 8,
       },
+      web: {
+        shadowColor: 'rgba(79, 70, 229, 0.25)',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 1,
+        shadowRadius: 12,
+      }
     }),
   },
   logoText: {
