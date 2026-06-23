@@ -18,7 +18,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app) # Habilita CORS para todas las rutas y orígenes
 
 # Clave secreta para firmar tokens
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret-key-para-ventas-rf'
