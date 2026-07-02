@@ -76,8 +76,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await storage.setItem('authUser', JSON.stringify(freshUser));
         } catch (e) {
           console.warn('[Auth] Error al refrescar datos de usuario desde el servidor:', e);
-          // Si el servidor retorna explícitamente no autorizado (por ejemplo, token expirado), deslogueamos
-          if (e instanceof Error && e.message.includes('401')) {
+          // Solo desloguear ante errores explícitos de autenticación (token inválido/expirado).
+          // Si el backend está temporalmente caído (error de red), conservar la sesión local.
+          const isAuthError = e instanceof Error && (
+            e.message.includes('401') ||
+            e.message.includes('token_expirado') ||
+            e.message.includes('token_invalido')
+          );
+          if (isAuthError) {
             await signOut();
           }
         }

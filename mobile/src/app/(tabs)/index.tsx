@@ -83,14 +83,23 @@ export default function DashboardScreen() {
 
   if (isCustomer) {
     const activePedido = misPedidos?.find(p => p.estado !== 'Entregado');
+    const isRealCustomer = user?.rol === 'customer' || user?.rol === 'user';
+    const userInitial = user?.nombre?.charAt(0)?.toUpperCase() ?? '?';
+    const firstName = user?.nombre?.split(' ')[0] ?? 'Cliente';
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        {/* Encabezado */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerSubtitle}>¡HOLA, {user?.nombre?.toUpperCase()}!</Text>
-            <Text style={styles.headerTitle}>Ventas RF</Text>
+        {/* ── Encabezado rediseñado — consistente con el login ── */}
+        <View style={styles.customerHeader}>
+          {/* Avatar con inicial */}
+          <View style={styles.customerAvatar}>
+            <Text style={styles.customerAvatarText}>{userInitial}</Text>
           </View>
+          {/* Saludo y marca */}
+          <View style={styles.customerHeaderText}>
+            <Text style={styles.customerHeaderGreeting}>¡Hola, {firstName}! 👋</Text>
+            <Text style={styles.customerHeaderBrand}>Ventas RF</Text>
+          </View>
+          {/* Acciones */}
           <View style={styles.headerActions}>
             {(user?.rol === 'admin' || user?.rol === 'repartidor') && (
               <Pressable
@@ -100,11 +109,11 @@ export default function DashboardScreen() {
                   pressed && styles.buttonPressed
                 ]}
               >
-                <Text style={styles.toggleViewButtonText}>Volver a Gestión</Text>
+                <Text style={styles.toggleViewButtonText}>Gestión</Text>
               </Pressable>
             )}
-            <Pressable 
-              onPress={() => refetchPedidos()} 
+            <Pressable
+              onPress={() => refetchPedidos()}
               style={({ pressed }) => [
                 styles.refreshButton,
                 pressed && styles.buttonPressed
@@ -112,8 +121,8 @@ export default function DashboardScreen() {
             >
               <RefreshCw size={18} color="#4A5568" />
             </Pressable>
-            <Pressable 
-              onPress={() => signOut()} 
+            <Pressable
+              onPress={() => signOut()}
               style={({ pressed }) => [
                 styles.refreshButton,
                 pressed && styles.buttonPressed
@@ -170,7 +179,6 @@ export default function DashboardScreen() {
                 {/* Progress bar */}
                 <View style={styles.progressTracker}>
                   {['Pendiente', 'En preparación', 'En reparto', 'Entregado'].map((stage, idx) => {
-                    const dbStageName = stage === 'En reparto' ? 'En envío' : stage;
                     const stagesList = ['Pendiente', 'En preparación', 'En envío', 'Entregado'];
                     const activeIndex = stagesList.indexOf(activePedido.estado);
                     const isCompleted = idx <= activeIndex;
@@ -245,19 +253,26 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Activar código Staff si es cliente real */}
-          {(user?.rol === 'customer' || user?.rol === 'user') && (
-            <View style={styles.staffCard}>
-              <Text style={styles.staffTitle}>¿Eres parte del Staff?</Text>
-              <Text style={styles.staffDesc}>
-                Ingresa el código de Staff provisto para activar tus funciones de Administrador o Repartidor.
-              </Text>
+          {/* Activar código Staff — link discreto para clientes reales */}
+          {isRealCustomer && !successMsg && (
+            <Pressable
+              onPress={() => setStaffCode(prev => prev ? '' : ' ')}
+              style={styles.staffToggleLink}
+            >
+              <Text style={styles.staffToggleLinkText}>¿Eres parte del staff? Activar acceso →</Text>
+            </Pressable>
+          )}
+
+          {/* Panel colapsable de código staff */}
+          {isRealCustomer && staffCode.trim().length >= 0 && staffCode !== '' && !successMsg && (
+            <View style={styles.staffCardDiscrete}>
+              <Text style={styles.staffTitle}>Acceso Staff</Text>
               <View style={styles.staffInputRow}>
                 <TextInput
                   style={styles.staffInput}
                   placeholder="Código de Staff"
                   placeholderTextColor="#94A3B8"
-                  value={staffCode}
+                  value={staffCode.trim()}
                   onChangeText={setStaffCode}
                   autoCapitalize="characters"
                   autoCorrect={false}
@@ -279,9 +294,9 @@ export default function DashboardScreen() {
                 </Pressable>
               </View>
               {errorMsg ? <Text style={styles.staffErrorMsg}>{errorMsg}</Text> : null}
-              {successMsg ? <Text style={styles.staffSuccessMsg}>{successMsg}</Text> : null}
             </View>
           )}
+          {isRealCustomer && successMsg ? <Text style={[styles.staffSuccessMsg, { textAlign: 'center', marginVertical: 12 }]}>{successMsg}</Text> : null}
         </ScrollView>
       </SafeAreaView>
     );
@@ -528,6 +543,90 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
   },
+  // ── Estilos del nuevo header de cliente ──────────────────────────────
+  customerHeader: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    gap: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  customerAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+  customerAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  customerHeaderText: {
+    flex: 1,
+  },
+  customerHeaderGreeting: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  customerHeaderBrand: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginTop: 1,
+  },
+  // ── Estilos del panel de staff discreto ──────────────────────────────
+  staffToggleLink: {
+    marginTop: 28,
+    marginBottom: 8,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  staffToggleLinkText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
+    textDecorationLine: 'underline',
+  },
+  staffCardDiscrete: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+  },
+
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
