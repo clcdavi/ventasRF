@@ -25,6 +25,7 @@ import {
   ShoppingBag,
   Info
 } from 'lucide-react-native';
+import { formatDateToLabel } from '../../utils/date';
 
 export default function EnviosScreen() {
   const queryClient = useQueryClient();
@@ -35,6 +36,19 @@ export default function EnviosScreen() {
     queryKey: ['envios', selectedDate],
     queryFn: () => api.getEnviosPendientes(selectedDate === 'all' ? undefined : selectedDate),
   });
+
+  const { data: fechasPedidos = [] } = useQuery({
+    queryKey: ['fechas-pedidos'],
+    queryFn: () => api.getFechasPedidos(),
+  });
+
+  React.useEffect(() => {
+    if (fechasPedidos.length > 0) {
+      if (selectedDate !== 'all' && !fechasPedidos.includes(selectedDate)) {
+        setSelectedDate(fechasPedidos[0]);
+      }
+    }
+  }, [fechasPedidos]);
 
   // Mutación para cambiar el estado a 'Entregado' directamente
   const markAsDeliveredMutation = useMutation({
@@ -211,11 +225,10 @@ export default function EnviosScreen() {
     );
   };
 
-  const datesList = [
-    { label: '25 de Mayo', value: '2026-05-25' },
-    { label: '1 de Mayo', value: '2026-05-01' },
-    { label: 'Todos', value: 'all' },
-  ];
+  const datesList = fechasPedidos.map(dateStr => ({
+    label: formatDateToLabel(dateStr),
+    value: dateStr
+  })).concat([{ label: 'Todos', value: 'all' }]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

@@ -225,6 +225,12 @@ def listar_pedidos():
     return jsonify(pedidos)
 
 
+@app.route('/api/pedidos/fechas', methods=['GET'])
+def listar_fechas_pedidos():
+    fechas = models.get_fechas_pedidos()
+    return jsonify(fechas)
+
+
 @app.route('/api/pedidos/mis-pedidos', methods=['GET'])
 def listar_mis_pedidos():
     user_id = obtener_usuario_id_opcional()

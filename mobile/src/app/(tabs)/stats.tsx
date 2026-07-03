@@ -15,6 +15,7 @@ import {
   Clock,
   Info
 } from 'lucide-react-native';
+import { formatDateToLabel } from '../../utils/date';
 
 export default function StatsScreen() {
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
@@ -23,6 +24,19 @@ export default function StatsScreen() {
     queryKey: ['stats', 'details', selectedDate],
     queryFn: () => api.getStats(selectedDate === 'all' ? undefined : selectedDate),
   });
+
+  const { data: fechasPedidos = [] } = useQuery({
+    queryKey: ['fechas-pedidos'],
+    queryFn: () => api.getFechasPedidos(),
+  });
+
+  React.useEffect(() => {
+    if (fechasPedidos.length > 0) {
+      if (selectedDate !== 'all' && !fechasPedidos.includes(selectedDate)) {
+        setSelectedDate(fechasPedidos[0]);
+      }
+    }
+  }, [fechasPedidos]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -42,11 +56,10 @@ export default function StatsScreen() {
     }
   };
 
-  const datesList = [
-    { label: '25 de Mayo', value: '2026-05-25' },
-    { label: '1 de Mayo', value: '2026-05-01' },
-    { label: 'Histórico', value: 'all' },
-  ];
+  const datesList = fechasPedidos.map(dateStr => ({
+    label: formatDateToLabel(dateStr),
+    value: dateStr
+  })).concat([{ label: 'Histórico', value: 'all' }]);
 
   const paidPercentage = stats?.recaudacion_total 
     ? Math.round((stats.recaudacion_cobrada / stats.recaudacion_total) * 100) 

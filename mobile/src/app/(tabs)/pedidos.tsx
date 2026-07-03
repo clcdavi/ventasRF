@@ -19,13 +19,13 @@ import {
   Info,
   Flame,
   ShoppingBag,
-  Phone,
   ChevronRight
 } from 'lucide-react-native';
 import { api } from '../../services/api';
 import { Pedido } from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
+import { formatDateToLabel } from '../../utils/date';
 
 export default function PedidosScreen() {
   const queryClient = useQueryClient();
@@ -36,7 +36,6 @@ export default function PedidosScreen() {
   const [selectedEstado, setSelectedEstado] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
 
-  // Fetch pedidos con filtros o mis pedidos
   const { data: pedidos, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['pedidos', selectedEstado, selectedDate, searchQuery, isCustomer],
     queryFn: () => isCustomer 
@@ -47,6 +46,20 @@ export default function PedidosScreen() {
           q: searchQuery || undefined,
         }),
   });
+
+  const { data: fechasPedidos = [] } = useQuery({
+    queryKey: ['fechas-pedidos'],
+    queryFn: () => api.getFechasPedidos(),
+    enabled: !isCustomer,
+  });
+
+  React.useEffect(() => {
+    if (!isCustomer && fechasPedidos.length > 0) {
+      if (selectedDate !== 'all' && !fechasPedidos.includes(selectedDate)) {
+        setSelectedDate(fechasPedidos[0]);
+      }
+    }
+  }, [fechasPedidos]);
 
   // Mutación para cambiar el estado de pago
   const togglePaidMutation = useMutation({
@@ -160,11 +173,10 @@ export default function PedidosScreen() {
   };
 
   const estadosList = ['Pendiente', 'En preparación', 'En envío', 'Entregado'];
-  const datesList = [
-    { label: '25 de Mayo', value: '2026-05-25' },
-    { label: '1 de Mayo', value: '2026-05-01' },
-    { label: 'Todos', value: 'all' },
-  ];
+  const datesList = fechasPedidos.map(dateStr => ({
+    label: formatDateToLabel(dateStr),
+    value: dateStr
+  })).concat([{ label: 'Todos', value: 'all' }]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

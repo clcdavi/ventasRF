@@ -7,10 +7,12 @@ import {
   Pressable, 
   ActivityIndicator, 
   Alert, 
-  Linking 
+  Linking,
+  Platform
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Audio } from 'expo-av';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
@@ -44,7 +46,44 @@ export default function PedidoDetailScreen() {
     queryKey: ['pedido', pedidoId],
     queryFn: () => api.getPedidoDetail(pedidoId),
     enabled: pedidoId > 0,
+    refetchInterval: isCustomer ? 10000 : false, // Poll every 10s for customers
   });
+
+  // Audio state
+  const [sound, setSound] = React.useState<Audio.Sound>();
+  const prevEstadoRef = React.useRef<string>();
+
+  React.useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  React.useEffect(() => {
+    async function playSound() {
+      // Solo en celular (iOS o Android) - Platform.OS
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        try {
+          const { sound: newSound } = await Audio.Sound.createAsync(
+            require('../../../assets/notification.wav')
+          );
+          setSound(newSound);
+          await newSound.playAsync();
+        } catch (e) {
+          console.log('Error playing sound', e);
+        }
+      }
+    }
+
+    if (pedido && isCustomer) {
+      if (prevEstadoRef.current && prevEstadoRef.current !== pedido.estado) {
+        playSound();
+      }
+      prevEstadoRef.current = pedido.estado;
+    }
+  }, [pedido?.estado, isCustomer]);
 
   // Mutación para cambiar pagado
   const togglePaidMutation = useMutation({

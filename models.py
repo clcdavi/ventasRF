@@ -251,6 +251,25 @@ def delete_producto(prod_id):
     finally:
         conn.close()
 
+def get_fechas_pedidos():
+    sql = "SELECT DISTINCT fecha_pedido::date as fecha FROM pedidos ORDER BY fecha DESC"
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql)
+            rows = cur.fetchall()
+            fechas = []
+            for r in rows:
+                f = r[0]
+                if f:
+                    if hasattr(f, 'strftime'):
+                        fechas.append(f.strftime('%Y-%m-%d'))
+                    else:
+                        fechas.append(str(f).split(' ')[0])
+            return fechas
+    finally:
+        conn.close()
+
 
 # ── PEDIDOS Y ITEMS ──────────────────────────────────────────────────────────
 

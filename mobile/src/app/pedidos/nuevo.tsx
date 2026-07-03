@@ -42,6 +42,31 @@ export default function NuevoPedidoScreen() {
   // items[producto_id] = cantidad
   const [items, setItems] = useState<Record<number, number>>({});
 
+  const { data: misPedidos } = useQuery({
+    queryKey: ['mis-pedidos'],
+    queryFn: () => api.getMisPedidos(),
+    enabled: isCustomer,
+  });
+
+  useEffect(() => {
+    // Si el cliente tiene pedidos anteriores y los campos están vacíos
+    if (isCustomer && misPedidos && misPedidos.length > 0) {
+      const ultimoPedido = misPedidos[0]; // Assuming they are ordered by date DESC
+      
+      // Auto-fill telefono if empty
+      if (!telefono && ultimoPedido.telefono) {
+        setTelefono(ultimoPedido.telefono);
+      }
+      
+      // Auto-fill direccion if empty (and not setting to 'Retiro en Iglesia' if that was their last)
+      // Actually, if their last was Retiro, maybe we shouldn't autofill that as a physical address,
+      // but let's just auto-fill whatever they had if it's not Retiro, or if it is, set tipoEntrega to retiro.
+      if (!direccion && ultimoPedido.direccion && ultimoPedido.direccion !== 'Retiro en Iglesia') {
+        setDireccion(ultimoPedido.direccion);
+      }
+    }
+  }, [isCustomer, misPedidos]);
+
   useEffect(() => {
     if (tipoEntrega === 'retiro') {
       setDireccion('Retiro en Iglesia');

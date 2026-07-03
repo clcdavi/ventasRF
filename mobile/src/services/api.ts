@@ -57,6 +57,11 @@ export const api = {
     return fetchJson<Pedido[]>(`/api/pedidos${query ? `?${query}` : ''}`);
   },
 
+  // Obtener fechas de pedidos
+  getFechasPedidos: () => {
+    return fetchJson<string[]>('/api/pedidos/fechas');
+  },
+
   // Obtener pedidos del usuario logueado (clientes)
   getMisPedidos: () => {
     return fetchJson<Pedido[]>('/api/pedidos/mis-pedidos');

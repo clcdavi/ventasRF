@@ -18,6 +18,7 @@ import {
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
+import { formatDateToLabel } from '../../utils/date';
 
 export default function DashboardScreen() {
   const { user, signOut, updateUser } = useAuth();
@@ -63,6 +64,21 @@ export default function DashboardScreen() {
     queryFn: () => api.getMisPedidos(),
     enabled: isCustomer,
   });
+
+  const { data: fechasPedidos = [] } = useQuery({
+    queryKey: ['fechas-pedidos'],
+    queryFn: () => api.getFechasPedidos(),
+    enabled: !isCustomer,
+  });
+
+  // Effect to select the most recent date as default if current is not in the list
+  React.useEffect(() => {
+    if (!isCustomer && fechasPedidos.length > 0) {
+      if (selectedDate !== 'all' && !fechasPedidos.includes(selectedDate)) {
+        setSelectedDate(fechasPedidos[0]);
+      }
+    }
+  }, [fechasPedidos]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -302,11 +318,10 @@ export default function DashboardScreen() {
     );
   }
 
-  const datesList = [
-    { label: '25 de Mayo', value: '2026-05-25' },
-    { label: '1 de Mayo', value: '2026-05-01' },
-    { label: 'Histórico', value: 'all' },
-  ];
+  const datesList = fechasPedidos.map(dateStr => ({
+    label: formatDateToLabel(dateStr),
+    value: dateStr
+  })).concat([{ label: 'Histórico', value: 'all' }]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
