@@ -1,614 +1,298 @@
-import os
-import psycopg2
 from datetime import datetime
-from config import (ESTADOS, MEDIOS_PAGO,
-                    PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
-                    PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD)
+from sqlalchemy import func, or_, case, literal_column
+from db import db, Usuario, Producto, Pedido, PedidoItem
+from config import ESTADOS, MEDIOS_PAGO, PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA, PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD
 
-import sqlite3
-import re
-
-class SQLiteCursorWrapper:
-    def __init__(self, sqlite_cursor):
-        self.cur = sqlite_cursor
-
-    def execute(self, sql, params=None):
-        # Translate Postgres SQL to SQLite
-        sql = sql.replace('%s', '?')
-        sql = sql.replace('ILIKE', 'LIKE')
-        sql = sql.replace('NOW()', "(datetime('now', 'localtime'))")
-        # Replace date cast: fecha_pedido::date = ? -> date(fecha_pedido) = ?
-        sql = re.sub(r'([\w\.]+)::date\b', r'date(\1)', sql)
-        # Replace SERIAL with INTEGER PRIMARY KEY AUTOINCREMENT in CREATE TABLE
-        sql = sql.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT')
-        # Remove IF NOT EXISTS from ADD COLUMN clauses (SQLite syntax)
-        sql = re.sub(r'ADD COLUMN\s+IF\s+NOT\s+EXISTS\b', 'ADD COLUMN', sql, flags=re.IGNORECASE)
-        try:
-            if params is not None:
-                self.cur.execute(sql, params)
-            else:
-                self.cur.execute(sql)
-        except Exception as e:
-            # If it's ALTER TABLE ADD COLUMN and column already exists, ignore
-            if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
-                pass
-            else:
-                raise e
-
-    def fetchone(self):
-        return self.cur.fetchone()
-
-    def fetchall(self):
-        return self.cur.fetchall()
-
-    @property
-    def description(self):
-        return self.cur.description
-
-    @property
-    def rowcount(self):
-        return self.cur.rowcount
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cur.close()
-
-class SQLiteConnectionWrapper:
-    def __init__(self, sqlite_conn):
-        self.conn = sqlite_conn
-
-    def cursor(self):
-        return SQLiteCursorWrapper(self.conn.cursor())
-
-    def commit(self):
-        self.conn.commit()
-
-    def rollback(self):
-        self.conn.rollback()
-
-    def close(self):
-        self.conn.close()
-
-
-def get_db():
-    db_url = os.environ.get('DATABASE_URL')
-    if db_url:
-        conn = psycopg2.connect(db_url)
-        with conn.cursor() as cur:
-            cur.execute("SET TIME ZONE 'America/Argentina/Buenos_Aires'")
-        return conn
-    else:
-        # Fallback to local SQLite database
-        conn = sqlite3.connect('ventasRF.db')
-        return SQLiteConnectionWrapper(conn)
-
-
+# Función auxiliar para serializar
 def _serialize(val):
     if isinstance(val, datetime):
-        return val.strftime('%Y-%m-%d %H:%M:%S')
+        return val.isoformat()
     return val
 
+def _row_to_dict(row, keys):
+    if not row:
+        return None
+    return {k: _serialize(v) for k, v in zip(keys, row)}
 
-def _row_to_dict(row, cursor):
-    cols = [desc[0] for desc in cursor.description]
-    return {col: _serialize(val) for col, val in zip(cols, row)}
-
+def _model_to_dict(obj):
+    if not obj:
+        return None
+    d = {}
+    for column in obj.__table__.columns:
+        val = getattr(obj, column.name)
+        d[column.name] = _serialize(val)
+    return d
 
 def init_db():
-    ddl_pedidos = """
-    CREATE TABLE IF NOT EXISTS pedidos (
-        id                           SERIAL PRIMARY KEY,
-        fecha_pedido                 TIMESTAMP NOT NULL DEFAULT NOW(),
-        nombre_cliente               TEXT NOT NULL,
-        telefono                     TEXT NOT NULL,
-        email                        TEXT,
-        direccion                    TEXT NOT NULL,
-        cantidad_locro               INTEGER NOT NULL DEFAULT 0,
-        cantidad_pastelito_batata    INTEGER NOT NULL DEFAULT 0,
-        cantidad_pastelito_membrillo INTEGER NOT NULL DEFAULT 0,
-        medio_pago                   TEXT NOT NULL,
-        monto_total                  REAL NOT NULL,
-        horario_entrega              TEXT,
-        notas                        TEXT,
-        estado                       TEXT NOT NULL DEFAULT 'Pendiente',
-        pagado                       BOOLEAN NOT NULL DEFAULT FALSE,
-        tipo_entrega                 TEXT NOT NULL DEFAULT 'envio',
-        usuario_id                   INTEGER REFERENCES usuarios(id),
-        fecha_actualizacion          TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    """
-    ddl_usuarios = """
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id                           SERIAL PRIMARY KEY,
-        nombre                       TEXT NOT NULL,
-        email                        TEXT NOT NULL UNIQUE,
-        password_hash                TEXT NOT NULL,
-        rol                          TEXT NOT NULL DEFAULT 'user',
-        created_at                   TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    """
-    ddl_productos = """
-    CREATE TABLE IF NOT EXISTS productos (
-        id                           SERIAL PRIMARY KEY,
-        nombre                       TEXT NOT NULL,
-        descripcion                  TEXT,
-        precio                       REAL NOT NULL,
-        activo                       BOOLEAN NOT NULL DEFAULT TRUE,
-        created_at                   TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    """
-    ddl_pedido_items = """
-    CREATE TABLE IF NOT EXISTS pedido_items (
-        id                           SERIAL PRIMARY KEY,
-        pedido_id                    INTEGER NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
-        producto_id                  INTEGER NOT NULL REFERENCES productos(id),
-        cantidad                     INTEGER NOT NULL,
-        precio_unitario              REAL NOT NULL
-    );
-    """
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(ddl_usuarios)
-            cur.execute(ddl_productos)
-            cur.execute(ddl_pedidos)
-            cur.execute(ddl_pedido_items)
-            cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS pagado BOOLEAN NOT NULL DEFAULT FALSE")
-            cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS tipo_entrega TEXT NOT NULL DEFAULT 'envio'")
-            cur.execute("ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS usuario_id INTEGER REFERENCES usuarios(id)")
-        conn.commit()
-    finally:
-        conn.close()
-
-
+    # Alembic handles the creation now.
+    pass
 
 # ── PRODUCTOS ────────────────────────────────────────────────────────────────
-
 def get_productos(solo_activos=False):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            if solo_activos:
-                cur.execute("SELECT * FROM productos WHERE activo = TRUE ORDER BY id ASC")
-            else:
-                cur.execute("SELECT * FROM productos ORDER BY id ASC")
-            return [_row_to_dict(row, cur) for row in cur.fetchall()]
-    finally:
-        conn.close()
+    query = Producto.query
+    if solo_activos:
+        query = query.filter_by(activo=True)
+    productos = query.all()
+    return [_model_to_dict(p) for p in productos]
 
 def get_producto_by_id(prod_id):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM productos WHERE id = %s", (prod_id,))
-            row = cur.fetchone()
-            return _row_to_dict(row, cur) if row else None
-    finally:
-        conn.close()
+    p = Producto.query.get(prod_id)
+    return _model_to_dict(p)
 
 def create_producto(data):
-    sql = """
-    INSERT INTO productos (nombre, descripcion, precio, activo)
-    VALUES (%s, %s, %s, %s)
-    """
-    params = (
-        data['nombre'].strip(),
-        data.get('descripcion', '').strip() or None,
-        float(data['precio']),
-        data.get('activo') in (True, 'true', 1, '1')
+    p = Producto(
+        nombre=data['nombre'],
+        descripcion=data.get('descripcion'),
+        precio=data['precio'],
+        activo=data.get('activo', True)
     )
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            is_sqlite = 'SQLiteConnectionWrapper' in str(type(conn))
-            if is_sqlite:
-                cur.execute(sql, params)
-                cur.execute("SELECT last_insert_rowid()")
-                p_id = cur.fetchone()[0]
-            else:
-                sql += " RETURNING id"
-                cur.execute(sql, params)
-                p_id = cur.fetchone()[0]
-        conn.commit()
-        return p_id
-    finally:
-        conn.close()
+    db.session.add(p)
+    db.session.commit()
+    return _model_to_dict(p)
 
 def update_producto(prod_id, data):
-    sql = """
-    UPDATE productos SET
-        nombre = %s, descripcion = %s, precio = %s, activo = %s
-    WHERE id = %s
-    """
-    params = (
-        data['nombre'].strip(),
-        data.get('descripcion', '').strip() or None,
-        float(data['precio']),
-        data.get('activo') in (True, 'true', 1, '1'),
-        prod_id
-    )
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-        conn.commit()
-        return cur.rowcount > 0
-    finally:
-        conn.close()
+    p = Producto.query.get(prod_id)
+    if not p:
+        return False
+    if 'nombre' in data: p.nombre = data['nombre']
+    if 'descripcion' in data: p.descripcion = data['descripcion']
+    if 'precio' in data: p.precio = data['precio']
+    if 'activo' in data: p.activo = data['activo']
+    db.session.commit()
+    return True
 
 def delete_producto(prod_id):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM productos WHERE id = %s", (prod_id,))
-        conn.commit()
-        return True
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        conn.close()
+    p = Producto.query.get(prod_id)
+    if not p:
+        return False
+    # Soft delete (make inactive) since orders may depend on it
+    p.activo = False
+    db.session.commit()
+    return True
 
+# ── PEDIDOS ──────────────────────────────────────────────────────────────────
 def get_fechas_pedidos():
-    sql = "SELECT DISTINCT fecha_pedido::date as fecha FROM pedidos ORDER BY fecha DESC"
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql)
-            rows = cur.fetchall()
-            fechas = []
-            for r in rows:
-                f = r[0]
-                if f:
-                    if hasattr(f, 'strftime'):
-                        fechas.append(f.strftime('%Y-%m-%d'))
-                    else:
-                        fechas.append(str(f).split(' ')[0])
-            return fechas
-    finally:
-        conn.close()
+    # Return distinct dates of orders
+    query = db.session.query(func.date(Pedido.fecha_pedido).label('fecha'))\
+        .group_by(func.date(Pedido.fecha_pedido))\
+        .order_by(func.date(Pedido.fecha_pedido).desc())
+    return [row.fecha for row in query.all()]
 
-
-# ── PEDIDOS Y ITEMS ──────────────────────────────────────────────────────────
-
-def _attach_items_to_pedidos(pedidos, conn):
-    if not pedidos:
-        return pedidos
-    pedido_ids = [p['id'] for p in pedidos]
-    placeholders = ','.join(['%s'] * len(pedido_ids))
-    with conn.cursor() as cur:
-        # Fetch items with product details
-        cur.execute(f"""
-            SELECT pi.*, p.nombre as producto_nombre 
-            FROM pedido_items pi
-            JOIN productos p ON pi.producto_id = p.id
-            WHERE pi.pedido_id IN ({placeholders})
-        """, tuple(pedido_ids))
-        items_rows = cur.fetchall()
-        items = [_row_to_dict(row, cur) for row in items_rows]
+def _attach_items_to_pedidos(pedidos_dicts):
+    if not pedidos_dicts:
+        return pedidos_dicts
     
-    # Map items to pedidos
+    pedido_ids = [p['id'] for p in pedidos_dicts]
+    items = db.session.query(PedidoItem, Producto.nombre)\
+        .join(Producto, PedidoItem.producto_id == Producto.id)\
+        .filter(PedidoItem.pedido_id.in_(pedido_ids))\
+        .all()
+    
+    # group by pedido_id
     items_by_pedido = {}
-    for item in items:
-        p_id = item['pedido_id']
-        if p_id not in items_by_pedido:
-            items_by_pedido[p_id] = []
-        items_by_pedido[p_id].append(item)
-        
-    for p in pedidos:
+    for item_model, prod_nombre in items:
+        item_dict = _model_to_dict(item_model)
+        item_dict['nombre_producto'] = prod_nombre
+        if item_dict['pedido_id'] not in items_by_pedido:
+            items_by_pedido[item_dict['pedido_id']] = []
+        items_by_pedido[item_dict['pedido_id']].append(item_dict)
+    
+    for p in pedidos_dicts:
         p['items'] = items_by_pedido.get(p['id'], [])
-    return pedidos
+    
+    return pedidos_dicts
 
 def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None):
-    sql = "SELECT * FROM pedidos WHERE 1=1"
-    params = []
+    query = Pedido.query
     if estado:
-        sql += " AND estado = %s"
-        params.append(estado)
+        query = query.filter_by(estado=estado)
     if medio_pago:
-        sql += " AND medio_pago = %s"
-        params.append(medio_pago)
-    if fecha:
-        sql += " AND fecha_pedido::date = %s"
-        params.append(fecha)
+        query = query.filter_by(medio_pago=medio_pago)
     if tipo_entrega:
-        sql += " AND tipo_entrega = %s"
-        params.append(tipo_entrega)
+        query = query.filter_by(tipo_entrega=tipo_entrega)
+    if fecha:
+        # SQLite vs Postgres: we can just filter by func.date
+        query = query.filter(func.date(Pedido.fecha_pedido) == fecha)
     if busqueda:
-        sql += " AND (id::text = %s OR nombre_cliente ILIKE %s)"
-        params.append(busqueda.strip())
-        params.append(f"%{busqueda.strip()}%")
-    sql += " ORDER BY fecha_pedido DESC"
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            pedidos = [_row_to_dict(row, cur) for row in cur.fetchall()]
-        return _attach_items_to_pedidos(pedidos, conn)
-    finally:
-        conn.close()
+        busqueda_like = f"%{busqueda}%"
+        query = query.filter(
+            or_(
+                Pedido.nombre_cliente.ilike(busqueda_like),
+                Pedido.telefono.ilike(busqueda_like)
+            )
+        )
+    
+    query = query.order_by(Pedido.fecha_pedido.desc())
+    pedidos_dicts = [_model_to_dict(p) for p in query.all()]
+    return _attach_items_to_pedidos(pedidos_dicts)
 
 def get_pedido_by_id(pedido_id):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
-            row = cur.fetchone()
-            if not row: return None
-            pedido = _row_to_dict(row, cur)
-        return _attach_items_to_pedidos([pedido], conn)[0]
-    finally:
-        conn.close()
+    p = Pedido.query.get(pedido_id)
+    if not p:
+        return None
+    return _attach_items_to_pedidos([_model_to_dict(p)])[0]
 
-def get_pedidos_by_usuario(user_id):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM pedidos WHERE usuario_id = %s ORDER BY fecha_pedido DESC", (user_id,))
-            pedidos = [_row_to_dict(row, cur) for row in cur.fetchall()]
-        return _attach_items_to_pedidos(pedidos, conn)
-    finally:
-        conn.close()
+def get_pedidos_by_usuario(usuario_id):
+    pedidos = Pedido.query.filter_by(usuario_id=usuario_id).order_by(Pedido.fecha_pedido.desc()).all()
+    pedidos_dicts = [_model_to_dict(p) for p in pedidos]
+    return _attach_items_to_pedidos(pedidos_dicts)
 
 def create_pedido(data):
-    pagado       = data.get('pagado') in (True, 'true', 1, '1', 'on')
-    tipo_entrega = data.get('tipo_entrega', 'envio')
-    fecha_pedido = data.get('fecha_pedido', '').strip() or None
-    usuario_id   = data.get('usuario_id')
-    items        = data.get('items', [])
+    monto_total = 0.0
+    items = data.get('items', [])
+    for item in items:
+        monto_total += item['precio_unitario'] * item['cantidad']
+
+    nuevo_pedido = Pedido(
+        nombre_cliente=data['nombre_cliente'],
+        telefono=data['telefono'],
+        email=data.get('email', ''),
+        direccion=data['direccion'],
+        cantidad_locro=data.get('cantidad_locro', 0),
+        cantidad_pastelito_batata=data.get('cantidad_pastelito_batata', 0),
+        cantidad_pastelito_membrillo=data.get('cantidad_pastelito_membrillo', 0),
+        medio_pago=data['medio_pago'],
+        monto_total=monto_total,
+        horario_entrega=data.get('horario_entrega', ''),
+        notas=data.get('notas', ''),
+        estado='Pendiente',
+        pagado=data.get('pagado', False),
+        tipo_entrega=data.get('tipo_entrega', 'envio'),
+        usuario_id=data.get('usuario_id')
+    )
     
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            # Calcular total consultando precios en BD
-            monto_total = 0.0
-            processed_items = []
-            for it in items:
-                cur.execute("SELECT precio FROM productos WHERE id = %s", (it['producto_id'],))
-                res = cur.fetchone()
-                if res:
-                    precio = res[0]
-                    cantidad = int(it['cantidad'])
-                    monto_total += precio * cantidad
-                    processed_items.append((it['producto_id'], cantidad, precio))
-                    
-            if fecha_pedido:
-                sql = """
-                INSERT INTO pedidos
-                    (nombre_cliente, telefono, email, direccion,
-                     medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega, fecha_pedido, usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """
-                params = (
-                    data['nombre_cliente'].strip(), data['telefono'].strip(),
-                    data.get('email', '').strip() or None, data['direccion'].strip(),
-                    data['medio_pago'], monto_total,
-                    data.get('horario_entrega', '').strip() or None,
-                    data.get('notas', data.get('notes', '')).strip() or None,
-                    pagado, tipo_entrega, fecha_pedido, usuario_id
-                )
-            else:
-                sql = """
-                INSERT INTO pedidos
-                    (nombre_cliente, telefono, email, direccion,
-                     medio_pago, monto_total, horario_entrega, notas, pagado, tipo_entrega, usuario_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """
-                params = (
-                    data['nombre_cliente'].strip(), data['telefono'].strip(),
-                    data.get('email', '').strip() or None, data['direccion'].strip(),
-                    data['medio_pago'], monto_total,
-                    data.get('horario_entrega', '').strip() or None,
-                    data.get('notas', data.get('notes', '')).strip() or None,
-                    pagado, tipo_entrega, usuario_id
-                )
-
-            is_sqlite = 'SQLiteConnectionWrapper' in str(type(conn))
-            if is_sqlite:
-                cur.execute(sql, params)
-                cur.execute("SELECT last_insert_rowid()")
-                pedido_id = cur.fetchone()[0]
-            else:
-                sql += " RETURNING id"
-                cur.execute(sql, params)
-                pedido_id = cur.fetchone()[0]
-
-            for p_id, cant, prec in processed_items:
-                if cant > 0:
-                    cur.execute(
-                        "INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
-                        (pedido_id, p_id, cant, prec)
-                    )
-        conn.commit()
-        return pedido_id, monto_total
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        conn.close()
+    db.session.add(nuevo_pedido)
+    db.session.flush() # get the id
+    
+    for item in items:
+        pi = PedidoItem(
+            pedido_id=nuevo_pedido.id,
+            producto_id=item['producto_id'],
+            cantidad=item['cantidad'],
+            precio_unitario=item['precio_unitario']
+        )
+        db.session.add(pi)
+        
+    db.session.commit()
+    return nuevo_pedido.id, monto_total
 
 def update_pedido(pedido_id, data):
-    pagado       = data.get('pagado') in (True, 'true', 1, '1', 'on')
-    tipo_entrega = data.get('tipo_entrega', 'envio')
-    fecha_pedido = data.get('fecha_pedido', '').strip() or None
-    items        = data.get('items', [])
+    p = Pedido.query.get(pedido_id)
+    if not p:
+        return False, None
+    if p.estado != 'Pendiente':
+        return False, 'not_pending'
+        
+    monto_total = 0.0
+    items = data.get('items', [])
+    for item in items:
+        monto_total += item['precio_unitario'] * item['cantidad']
+        
+    p.nombre_cliente = data['nombre_cliente']
+    p.telefono = data['telefono']
+    p.email = data.get('email', '')
+    p.direccion = data['direccion']
+    p.cantidad_locro = data.get('cantidad_locro', 0)
+    p.cantidad_pastelito_batata = data.get('cantidad_pastelito_batata', 0)
+    p.cantidad_pastelito_membrillo = data.get('cantidad_pastelito_membrillo', 0)
+    p.medio_pago = data['medio_pago']
+    p.horario_entrega = data.get('horario_entrega', '')
+    p.notas = data.get('notas', '')
+    p.tipo_entrega = data.get('tipo_entrega', 'envio')
+    p.monto_total = monto_total
     
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            monto_total = 0.0
-            processed_items = []
-            for it in items:
-                cur.execute("SELECT precio FROM productos WHERE id = %s", (it['producto_id'],))
-                res = cur.fetchone()
-                if res:
-                    precio = res[0]
-                    cantidad = int(it['cantidad'])
-                    monto_total += precio * cantidad
-                    processed_items.append((it['producto_id'], cantidad, precio))
-
-            if fecha_pedido:
-                sql = """
-                UPDATE pedidos SET
-                    nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
-                    medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
-                    estado = %s, pagado = %s, tipo_entrega = %s, fecha_pedido = %s, fecha_actualizacion = NOW()
-                WHERE id = %s
-                """
-                params = (
-                    data['nombre_cliente'].strip(), data['telefono'].strip(),
-                    data.get('email', '').strip() or None, data['direccion'].strip(),
-                    data['medio_pago'], monto_total,
-                    data.get('horario_entrega', '').strip() or None,
-                    data.get('notas', data.get('notes', '')).strip() or None,
-                    data['estado'], pagado, tipo_entrega, fecha_pedido, pedido_id
-                )
-            else:
-                sql = """
-                UPDATE pedidos SET
-                    nombre_cliente = %s, telefono = %s, email = %s, direccion = %s,
-                    medio_pago = %s, monto_total = %s, horario_entrega = %s, notas = %s,
-                    estado = %s, pagado = %s, tipo_entrega = %s, fecha_actualizacion = NOW()
-                WHERE id = %s
-                """
-                params = (
-                    data['nombre_cliente'].strip(), data['telefono'].strip(),
-                    data.get('email', '').strip() or None, data['direccion'].strip(),
-                    data['medio_pago'], monto_total,
-                    data.get('horario_entrega', '').strip() or None,
-                    data.get('notas', data.get('notes', '')).strip() or None,
-                    data['estado'], pagado, tipo_entrega, pedido_id
-                )
-            
-            cur.execute(sql, params)
-            
-            # Recrear items
-            cur.execute("DELETE FROM pedido_items WHERE pedido_id = %s", (pedido_id,))
-            for p_id, cant, prec in processed_items:
-                if cant > 0:
-                    cur.execute(
-                        "INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio_unitario) VALUES (%s, %s, %s, %s)",
-                        (pedido_id, p_id, cant, prec)
-                    )
-                    
-        conn.commit()
-        return True, monto_total
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        conn.close()
-
+    # Delete old items
+    PedidoItem.query.filter_by(pedido_id=p.id).delete()
+    
+    # Add new items
+    for item in items:
+        pi = PedidoItem(
+            pedido_id=p.id,
+            producto_id=item['producto_id'],
+            cantidad=item['cantidad'],
+            precio_unitario=item['precio_unitario']
+        )
+        db.session.add(pi)
+        
+    db.session.commit()
+    return True, monto_total
 
 def update_estado(pedido_id, estado):
-    from config import ESTADOS
     if estado not in ESTADOS:
         raise ValueError(f"Estado inválido: {estado}")
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("UPDATE pedidos SET estado = %s, fecha_actualizacion = NOW() WHERE id = %s", (estado, pedido_id))
-            if cur.rowcount == 0:
-                return False
-        conn.commit()
-        return True
-    finally:
-        conn.close()
-
+    p = Pedido.query.get(pedido_id)
+    if not p:
+        return False
+    p.estado = estado
+    db.session.commit()
+    return True
 
 def update_pagado(pedido_id, pagado):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("UPDATE pedidos SET pagado = %s, fecha_actualizacion = NOW() WHERE id = %s", (pagado, pedido_id))
-            if cur.rowcount == 0:
-                return False
-        conn.commit()
-        return True
-    finally:
-        conn.close()
-
+    p = Pedido.query.get(pedido_id)
+    if not p:
+        return False
+    p.pagado = pagado
+    db.session.commit()
+    return True
 
 def delete_pedido(pedido_id):
-    pedido = get_pedido_by_id(pedido_id)
-    if not pedido:
+    p = Pedido.query.get(pedido_id)
+    if not p:
         return False, 'not_found'
-    if pedido['estado'] != 'Pendiente':
+    if p.estado != 'Pendiente':
         return False, 'not_pending'
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM pedidos WHERE id = %s", (pedido_id,))
-        conn.commit()
-    finally:
-        conn.close()
+    
+    db.session.delete(p)
+    db.session.commit()
     return True, None
 
-
 def get_stats(fecha=None):
-    conn = get_db()
-    
-    where_clause = ""
-    params = []
+    query = Pedido.query
     if fecha:
-        where_clause = "WHERE fecha_pedido::date = %s"
-        params.append(fecha)
+        query = query.filter(func.date(Pedido.fecha_pedido) == fecha)
+    
+    # Totales
+    stats_query = db.session.query(
+        func.coalesce(func.sum(Pedido.monto_total), 0).label('recaudacion_total'),
+        func.coalesce(func.sum(case((Pedido.pagado == True, Pedido.monto_total), else_=0)), 0).label('ingresos_totales'),
+        func.coalesce(func.sum(case((Pedido.pagado == False, Pedido.monto_total), else_=0)), 0).label('recaudacion_pendiente'),
+        func.count().label('total_pedidos')
+    )
+    if fecha:
+        stats_query = stats_query.filter(func.date(Pedido.fecha_pedido) == fecha)
+    
+    totales_res = stats_query.first()
+    totales = _row_to_dict(totales_res, ['recaudacion_total', 'ingresos_totales', 'recaudacion_pendiente', 'total_pedidos'])
 
-    try:
-        with conn.cursor() as cur:
-            cur.execute(f"""
-                SELECT
-                    COALESCE(SUM(monto_total), 0) as recaudacion_total,
-                    COALESCE(SUM(CASE WHEN pagado THEN monto_total ELSE 0 END), 0) as ingresos_totales,
-                    COALESCE(SUM(CASE WHEN NOT pagado THEN monto_total ELSE 0 END), 0) as recaudacion_pendiente,
-                    COUNT(*) as total_pedidos
-                FROM pedidos
-                {where_clause}
-            """, params)
-            totales = _row_to_dict(cur.fetchone(), cur)
-
-            if fecha:
-                cur.execute("""
-                    SELECT p.nombre, COALESCE(SUM(filtered_items.cantidad), 0) as cantidad
-                    FROM productos p
-                    LEFT JOIN (
-                        SELECT pi.producto_id, pi.cantidad
-                        FROM pedido_items pi
-                        JOIN pedidos ped ON pi.pedido_id = ped.id
-                        WHERE ped.fecha_pedido::date = %s
-                    ) filtered_items ON p.id = filtered_items.producto_id
-                    GROUP BY p.nombre
-                """, (fecha,))
-            else:
-                cur.execute("""
-                    SELECT p.nombre, COALESCE(SUM(pi.cantidad), 0) as cantidad
-                    FROM productos p
-                    LEFT JOIN pedido_items pi ON p.id = pi.producto_id
-                    GROUP BY p.nombre
-                """)
-            por_producto = {row[0]: row[1] for row in cur.fetchall()}
-
-            cur.execute(f"""
-                SELECT medio_pago, COALESCE(SUM(monto_total), 0) as total
-                FROM pedidos
-                {where_clause}
-                GROUP BY medio_pago
-            """, params)
-            ingresos_pago = {row[0]: row[1] for row in cur.fetchall()}
-
-            cur.execute(f"""
-                SELECT estado, COUNT(*) as cantidad
-                FROM pedidos
-                {where_clause}
-                GROUP BY estado
-            """, params)
-            por_estado = {row[0]: row[1] for row in cur.fetchall()}
-
-    finally:
-        conn.close()
-
+    # Por producto
+    if fecha:
+        # We need a subquery for filtered items
+        subq = db.session.query(PedidoItem.producto_id, PedidoItem.cantidad)\
+            .join(Pedido, PedidoItem.pedido_id == Pedido.id)\
+            .filter(func.date(Pedido.fecha_pedido) == fecha).subquery()
+            
+        prod_query = db.session.query(Producto.nombre, func.coalesce(func.sum(subq.c.cantidad), 0))\
+            .outerjoin(subq, Producto.id == subq.c.producto_id)\
+            .group_by(Producto.nombre)
+    else:
+        prod_query = db.session.query(Producto.nombre, func.coalesce(func.sum(PedidoItem.cantidad), 0))\
+            .outerjoin(PedidoItem, Producto.id == PedidoItem.producto_id)\
+            .group_by(Producto.nombre)
+            
+    por_producto = {row[0]: row[1] for row in prod_query.all()}
+    
+    # Por medio de pago
+    mp_query = db.session.query(Pedido.medio_pago, func.coalesce(func.sum(Pedido.monto_total), 0))
+    if fecha: mp_query = mp_query.filter(func.date(Pedido.fecha_pedido) == fecha)
+    mp_query = mp_query.group_by(Pedido.medio_pago)
+    ingresos_pago = {row[0]: row[1] for row in mp_query.all()}
+    
+    # Por estado
+    st_query = db.session.query(Pedido.estado, func.count())
+    if fecha: st_query = st_query.filter(func.date(Pedido.fecha_pedido) == fecha)
+    st_query = st_query.group_by(Pedido.estado)
+    por_estado = {row[0]: row[1] for row in st_query.all()}
+    
     return {
         **totales,
         'recaudacion_cobrada': totales.get('ingresos_totales', 0),
@@ -618,125 +302,89 @@ def get_stats(fecha=None):
         'por_producto': por_producto
     }
 
-
 def get_contactos(fecha=None):
-    sql = """
-    SELECT 
-        nombre_cliente, 
-        telefono,
-        (SELECT email FROM pedidos p2 WHERE p2.nombre_cliente = p.nombre_cliente AND p2.telefono = p.telefono ORDER BY fecha_pedido DESC LIMIT 1) as email,
-        (SELECT direccion FROM pedidos p2 WHERE p2.nombre_cliente = p.nombre_cliente AND p2.telefono = p.telefono ORDER BY fecha_pedido DESC LIMIT 1) as direccion,
-        COUNT(*) as total_pedidos,
-        SUM(monto_total) as gasto_total,
-        MAX(fecha_pedido) as ultimo_pedido
-    FROM pedidos p
-    WHERE 1=1
-    """
-    params = []
+    # This query uses window functions or subqueries in raw SQL. 
+    # Let's do it cleanly in Python by getting the grouped data.
+    base_query = db.session.query(
+        Pedido.nombre_cliente,
+        Pedido.telefono,
+        func.count().label('total_pedidos'),
+        func.sum(Pedido.monto_total).label('gasto_total'),
+        func.max(Pedido.fecha_pedido).label('ultimo_pedido')
+    ).group_by(Pedido.nombre_cliente, Pedido.telefono).order_by(Pedido.nombre_cliente.asc())
+    
     if fecha:
-        sql += " AND EXISTS (SELECT 1 FROM pedidos p3 WHERE p3.nombre_cliente = p.nombre_cliente AND p3.telefono = p.telefono AND p3.fecha_pedido::date = %s)"
-        params.append(fecha)
-    
-    sql += " GROUP BY nombre_cliente, telefono ORDER BY nombre_cliente ASC"
-    
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            return [_row_to_dict(row, cur) for row in cur.fetchall()]
-    finally:
-        conn.close()
-
+        # Only clients that ordered on this date
+        subq = db.session.query(Pedido.nombre_cliente, Pedido.telefono)\
+            .filter(func.date(Pedido.fecha_pedido) == fecha)\
+            .group_by(Pedido.nombre_cliente, Pedido.telefono).subquery()
+            
+        base_query = base_query.join(
+            subq, 
+            (Pedido.nombre_cliente == subq.c.nombre_cliente) & (Pedido.telefono == subq.c.telefono)
+        )
+        
+    contactos = []
+    for row in base_query.all():
+        nombre_c, tel, total_p, gasto_t, ult_p = row
+        # Fetch latest order to get email and address
+        latest = Pedido.query.filter_by(nombre_cliente=nombre_c, telefono=tel).order_by(Pedido.fecha_pedido.desc()).first()
+        contactos.append({
+            'nombre_cliente': nombre_c,
+            'telefono': tel,
+            'email': latest.email if latest else '',
+            'direccion': latest.direccion if latest else '',
+            'total_pedidos': total_p,
+            'gasto_total': gasto_t,
+            'ultimo_pedido': _serialize(ult_p)
+        })
+    return contactos
 
 def get_historial_contacto(nombre_cliente, telefono):
-    sql = """
-    SELECT * FROM pedidos 
-    WHERE nombre_cliente = %s AND telefono = %s 
-    ORDER BY fecha_pedido DESC
-    """
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql, (nombre_cliente, telefono))
-            return [_row_to_dict(row, cur) for row in cur.fetchall()]
-    finally:
-        conn.close()
-
+    pedidos = Pedido.query.filter_by(nombre_cliente=nombre_cliente, telefono=telefono).order_by(Pedido.fecha_pedido.desc()).all()
+    return [_model_to_dict(p) for p in pedidos]
 
 def create_usuario(nombre, email, password_hash, rol='user'):
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            is_sqlite = 'SQLiteConnectionWrapper' in str(type(conn))
-            
-            if is_sqlite:
-                sql = """
-                INSERT INTO usuarios (nombre, email, password_hash, rol)
-                VALUES (%s, %s, %s, %s)
-                """
-                cur.execute(sql, (nombre, email, password_hash, rol))
-                cur.execute("SELECT last_insert_rowid()")
-                user_id = cur.fetchone()[0]
-                cur.execute("SELECT id, nombre, email, rol, created_at FROM usuarios WHERE id = %s", (user_id,))
-                row = cur.fetchone()
-            else:
-                sql = """
-                INSERT INTO usuarios (nombre, email, password_hash, rol)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id, nombre, email, rol, created_at
-                """
-                cur.execute(sql, (nombre, email, password_hash, rol))
-                row = cur.fetchone()
-                
-            cols = ['id', 'nombre', 'email', 'rol', 'created_at']
-            result = {col: _serialize(val) for col, val in zip(cols, row)}
-        conn.commit()
-        return result
-    finally:
-        conn.close()
-
+    u = Usuario(nombre=nombre, email=email, password_hash=password_hash, rol=rol)
+    db.session.add(u)
+    db.session.commit()
+    return {
+        'id': u.id,
+        'nombre': u.nombre,
+        'email': u.email,
+        'rol': u.rol,
+        'created_at': _serialize(u.created_at)
+    }
 
 def get_usuario_by_email(email):
-    sql = "SELECT id, nombre, email, password_hash, rol, created_at FROM usuarios WHERE email = %s"
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql, (email,))
-            row = cur.fetchone()
-            if not row:
-                return None
-            cols = ['id', 'nombre', 'email', 'password_hash', 'rol', 'created_at']
-            return {col: _serialize(val) for col, val in zip(cols, row)}
-    finally:
-        conn.close()
-
+    u = Usuario.query.filter_by(email=email).first()
+    if not u:
+        return None
+    return {
+        'id': u.id,
+        'nombre': u.nombre,
+        'email': u.email,
+        'password_hash': u.password_hash,
+        'rol': u.rol,
+        'created_at': _serialize(u.created_at)
+    }
 
 def get_usuario_by_id(user_id):
-    sql = "SELECT id, nombre, email, rol, created_at FROM usuarios WHERE id = %s"
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(sql, (user_id,))
-            row = cur.fetchone()
-            if not row:
-                return None
-            cols = ['id', 'nombre', 'email', 'rol', 'created_at']
-            return {col: _serialize(val) for col, val in zip(cols, row)}
-    finally:
-        conn.close()
-
+    u = Usuario.query.get(user_id)
+    if not u:
+        return None
+    return {
+        'id': u.id,
+        'nombre': u.nombre,
+        'email': u.email,
+        'rol': u.rol,
+        'created_at': _serialize(u.created_at)
+    }
 
 def update_usuario_rol(user_id, nuevo_rol):
-    """Actualiza el rol de un usuario existente."""
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "UPDATE usuarios SET rol = %s WHERE id = %s",
-                (nuevo_rol, user_id)
-            )
-        conn.commit()
-        return cur.rowcount > 0
-    finally:
-        conn.close()
-
+    u = Usuario.query.get(user_id)
+    if not u:
+        return False
+    u.rol = nuevo_rol
+    db.session.commit()
+    return True

@@ -35,5 +35,4 @@ ENV PATH=/root/.local/bin:$PATH
 COPY . .
 
 EXPOSE 8080
-
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:8080", "app:app"]

@@ -21,9 +21,14 @@ from openpyxl.utils import get_column_letter
 from flask_cors import CORS
 import traceback
 from werkzeug.exceptions import HTTPException
+from db import init_db_app
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 CORS(app) # Habilita CORS para todas las rutas y orígenes
+
+init_db_app(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -228,6 +233,7 @@ def crear_pedido():
         valid_data['usuario_id'] = user_id
 
     pedido_id, monto_total = models.create_pedido(valid_data)
+    socketio.emit('pedidos_actualizados', {'mensaje': 'Nuevo pedido creado'})
     return jsonify({'ok': True, 'id': pedido_id, 'monto_total': monto_total}), 201
 
 
@@ -273,6 +279,7 @@ def cambiar_pagado(pedido_id):
     ok = models.update_pagado(pedido_id, bool(data['pagado']))
     if not ok:
         return jsonify({'error': 'Pedido no encontrado.'}), 404
+    socketio.emit('pedidos_actualizados', {'mensaje': 'Estado de pago actualizado'})
     return jsonify({'ok': True, 'pagado': data['pagado']})
 
 
@@ -292,6 +299,7 @@ def cambiar_estado(pedido_id):
         return jsonify({'error': str(e)}), 400
     if not ok:
         return jsonify({'error': 'Pedido no encontrado.'}), 404
+    socketio.emit('pedidos_actualizados', {'mensaje': 'Estado de pedido actualizado'})
     return jsonify({'ok': True, 'estado': valid_data['estado']})
 
 
@@ -677,4 +685,4 @@ def upgrade_role():
 
 # ── Arranque ─────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    socketio.run(app, debug=True, host='0.0.0.0', port=8080)

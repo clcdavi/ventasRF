@@ -11,6 +11,9 @@ import {
   ScrollView,
   Platform
 } from 'react-native';
+import { useEffect } from 'react';
+import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../../services/config';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { 
@@ -47,8 +50,27 @@ export default function PedidosScreen() {
           fecha: selectedDate === 'all' ? undefined : selectedDate,
           q: searchQuery || undefined,
         }),
-    refetchInterval: isCustomer ? 10000 : false,
+    // refetchInterval eliminado gracias a WebSockets
   });
+
+  useEffect(() => {
+    // Conectar a WebSocket
+    const socket = io(API_BASE_URL);
+    
+    socket.on('connect', () => {
+      console.log('Conectado al servidor WebSocket');
+    });
+
+    socket.on('pedidos_actualizados', (data) => {
+      console.log('Pedidos actualizados:', data);
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [queryClient]);
 
   const { data: fechasPedidos = [] } = useQuery({
     queryKey: ['fechas-pedidos'],
