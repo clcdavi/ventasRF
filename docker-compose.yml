@@ -29,6 +29,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://${DB_USER:-usuario}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-ventasrf}
       - TZ=America/Argentina/Buenos_Aires
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecret_jwt_ventasrf_2026}
+      - CODIGO_ADMIN=${CODIGO_ADMIN:-12345}
+      - CODIGO_REPARTIDOR=${CODIGO_REPARTIDOR:-67890}
     depends_on:
       db:
         condition: service_healthy
