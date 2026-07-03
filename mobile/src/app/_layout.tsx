@@ -1,7 +1,9 @@
+import React, { useState } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StatusBar, View, Text, useWindowDimensions, StyleSheet, Platform } from 'react-native';
+import { StatusBar, View, Text, useWindowDimensions, StyleSheet, Platform, Pressable } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Maximize, Minimize } from 'lucide-react-native';
 import { AuthProvider } from '../stores/auth';
 
 const queryClient = new QueryClient({
@@ -17,6 +19,7 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const { width } = useWindowDimensions();
   const isLargeScreen = Platform.OS === 'web' && width > 768;
+  const [isExpandedView, setIsExpandedView] = useState(false);
 
   const appContent = (
     <Stack
@@ -85,35 +88,55 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
           {isLargeScreen ? (
-            <View style={styles.desktopContainer}>
-              {/* Sección Izquierda: Branding e Instrucciones */}
-              <View style={styles.desktopLeft}>
-                <View style={styles.glassCard}>
-                  <View style={styles.logoContainer}>
-                    <Text style={styles.logoText}>RF</Text>
-                  </View>
-                  <Text style={styles.desktopTitle}>PedidosRF</Text>
-                  <Text style={styles.desktopSubtitle}>
-                    Bienvenido al sistema de pedidos y gestión. Esta interfaz premium te permite realizar pedidos, ver tus estadísticas de ventas y coordinar repartos.
-                  </Text>
-                  <View style={styles.badgeContainer}>
-                    <View style={styles.infoBadge}>
-                      <Text style={styles.infoBadgeText}>✨ Interfaz Optimizada</Text>
+            isExpandedView ? (
+              <View style={{ flex: 1 }}>
+                {appContent}
+                <Pressable 
+                  style={styles.floatingToggleBtn}
+                  onPress={() => setIsExpandedView(false)}
+                >
+                  <Minimize color="#ffffff" size={24} />
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.desktopContainer}>
+                {/* Sección Izquierda: Branding e Instrucciones */}
+                <View style={styles.desktopLeft}>
+                  <View style={styles.glassCard}>
+                    <View style={styles.logoContainer}>
+                      <Text style={styles.logoText}>RF</Text>
                     </View>
-                    <View style={styles.infoBadgeOutline}>
-                      <Text style={styles.infoBadgeTextOutline}>📱 Accesible desde Celular</Text>
+                    <Text style={styles.desktopTitle}>PedidosRF</Text>
+                    <Text style={styles.desktopSubtitle}>
+                      Bienvenido al sistema de pedidos y gestión. Esta interfaz premium te permite realizar pedidos, ver tus estadísticas de ventas y coordinar repartos.
+                    </Text>
+                    <View style={styles.badgeContainer}>
+                      <View style={styles.infoBadge}>
+                        <Text style={styles.infoBadgeText}>✨ Interfaz Optimizada</Text>
+                      </View>
+                      <View style={styles.infoBadgeOutline}>
+                        <Text style={styles.infoBadgeTextOutline}>📱 Accesible desde Celular</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
+  
+                {/* Sección Derecha: Marco del Celular con la App */}
+                <View style={styles.desktopRight}>
+                  <View style={styles.desktopAppFrame}>
+                    {appContent}
+                  </View>
+                </View>
 
-              {/* Sección Derecha: Marco del Celular con la App */}
-              <View style={styles.desktopRight}>
-                <View style={styles.desktopAppFrame}>
-                  {appContent}
-                </View>
+                {/* Botón para Expandir */}
+                <Pressable 
+                  style={styles.floatingToggleBtn}
+                  onPress={() => setIsExpandedView(true)}
+                >
+                  <Maximize color="#ffffff" size={24} />
+                </Pressable>
               </View>
-            </View>
+            )
           ) : (
             appContent
           )}
@@ -246,5 +269,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 60,
     elevation: 12,
+  } as any,
+  floatingToggleBtn: {
+    position: 'absolute',
+    bottom: 32,
+    right: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 9999,
   } as any,
 });
