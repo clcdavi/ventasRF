@@ -15,6 +15,7 @@ import {
   Clock,
   Info
 } from 'lucide-react-native';
+import { Picker } from '@react-native-picker/picker';
 import { formatDateToLabel } from '../../utils/date';
 
 export default function StatsScreen() {
@@ -68,31 +69,22 @@ export default function StatsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Selector de Evento */}
-      <View style={styles.selectorContainer}>
-        {datesList.map((d) => (
-          <Pressable
-            key={d.value}
-            onPress={() => setSelectedDate(d.value)}
-            style={({ pressed }) => [
-              styles.selectorChip,
-              selectedDate === d.value && styles.selectorChipActive,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <Calendar 
-              size={14} 
-              color={selectedDate === d.value ? '#FFFFFF' : '#718096'} 
-              style={{ marginRight: 6 }} 
-            />
-            <Text style={[
-              styles.selectorChipText,
-              selectedDate === d.value && styles.selectorChipTextActive
-            ]}>
-              {d.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      {datesList.length > 0 && (
+        <View style={[styles.selectorContainer, { alignItems: 'center' }]}>
+          <Text style={styles.dateLabel}>Filtrar fecha:</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedDate}
+              onValueChange={(itemValue) => setSelectedDate(itemValue)}
+              style={styles.picker}
+            >
+              {datesList.map((d) => (
+                <Picker.Item key={d.value} label={d.label} value={d.value} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      )}
 
       {isLoading ? (
         <View style={styles.centerContainer}>
@@ -238,6 +230,30 @@ const styles = StyleSheet.create({
     marginTop: 14,
     marginBottom: 8,
     gap: 10,
+  },
+  dateLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  pickerContainer: {
+    flex: 1,
+    height: 36,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 36,
+    width: '100%',
+    color: '#1E293B',
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    fontSize: 13,
+    outline: 'none',
   },
   selectorChip: {
     flexDirection: 'row',
