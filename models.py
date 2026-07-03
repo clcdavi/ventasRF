@@ -517,7 +517,9 @@ def create_usuario(nombre, email, password_hash, rol='user'):
                 row = cur.fetchone()
                 
             cols = ['id', 'nombre', 'email', 'rol', 'created_at']
-            return {col: _serialize(val) for col, val in zip(cols, row)}
+            result = {col: _serialize(val) for col, val in zip(cols, row)}
+        conn.commit()
+        return result
     finally:
         conn.close()
 
