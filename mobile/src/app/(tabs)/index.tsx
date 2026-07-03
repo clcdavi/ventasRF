@@ -509,6 +509,19 @@ export default function DashboardScreen() {
             </Pressable>
 
             <Pressable 
+              onPress={() => router.push('/admin/productos')}
+              style={({ pressed }) => [
+                styles.actionButton, 
+                styles.actionSecondary, 
+                pressed && styles.buttonPressed,
+                { marginBottom: 8 }
+              ]}
+            >
+              <Text style={styles.actionButtonTextSecondary}>Productos</Text>
+              <ShoppingBag size={16} color="#4F46E5" style={{ marginLeft: 4 }} />
+            </Pressable>
+
+            <Pressable 
               onPress={() => router.push('/envios')}
               style={({ pressed }) => [
                 styles.actionButton, 
@@ -708,7 +721,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   // Double-Bezel Architecture para la Tarjeta de Recaudación Principal
   doubleBezelOuter: {

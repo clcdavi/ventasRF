@@ -123,6 +123,26 @@ export const api = {
     return fetchJson<Producto[]>(`/api/productos${query}`);
   },
 
+  createProducto: (data: Partial<Producto>) => {
+    return fetchJson<Producto>('/api/productos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateProducto: (id: number, data: Partial<Producto>) => {
+    return fetchJson<Producto>(`/api/productos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteProducto: (id: number) => {
+    return fetchJson<{ ok: boolean }>(`/api/productos/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Obtener contactos / directorio de clientes
   getContactos: (fecha?: string) => {
     const query = fecha ? `?fecha=${fecha}` : '';
