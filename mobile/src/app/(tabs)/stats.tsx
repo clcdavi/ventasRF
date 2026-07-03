@@ -191,39 +191,21 @@ export default function StatsScreen() {
               </View>
               <Text style={styles.cardTitle}>Productos Vendidos</Text>
             </View>
-            
-            {/* Fila Locro */}
-            <View style={styles.productRow}>
-              <View style={[styles.productIconCircle, { backgroundColor: '#FEF2F2' }]}>
-                <Flame size={18} color="#EF4444" />
-              </View>
-              <View style={styles.productTextContainer}>
-                <Text style={styles.productName}>Locro</Text>
-                <Text style={styles.productDetail}>{stats.total_locro || 0} porciones</Text>
-              </View>
-            </View>
-
-            {/* Fila Pastelitos Batata */}
-            <View style={styles.productRow}>
-              <View style={[styles.productIconCircle, { backgroundColor: '#FFFBEB' }]}>
-                <ShoppingBag size={18} color="#F59E0B" />
-              </View>
-              <View style={styles.productTextContainer}>
-                <Text style={styles.productName}>Pastelitos de Batata</Text>
-                <Text style={styles.productDetail}>{stats.total_batata || 0} unidades</Text>
-              </View>
-            </View>
-
-            {/* Fila Pastelitos Membrillo */}
-            <View style={styles.productRow}>
-              <View style={[styles.productIconCircle, { backgroundColor: '#FEF2F2' }]}>
-                <ShoppingBag size={18} color="#EF4444" />
-              </View>
-              <View style={styles.productTextContainer}>
-                <Text style={styles.productName}>Pastelitos de Membrillo</Text>
-                <Text style={styles.productDetail}>{stats.total_membrillo || 0} unidades</Text>
-              </View>
-            </View>
+            {stats.por_producto && Object.keys(stats.por_producto).length > 0 ? (
+              Object.entries(stats.por_producto).map(([productName, quantity]) => (
+                <View key={productName} style={styles.productRow}>
+                  <View style={[styles.productIconCircle, { backgroundColor: '#F8F9FA' }]}>
+                    <ShoppingBag size={18} color="#4F46E5" />
+                  </View>
+                  <View style={styles.productTextContainer}>
+                    <Text style={styles.productName}>{productName}</Text>
+                    <Text style={styles.productDetail}>{quantity} unidades</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No hay productos registrados.</Text>
+            )}
           </View>
 
         </ScrollView>

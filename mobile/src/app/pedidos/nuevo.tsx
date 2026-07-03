@@ -7,7 +7,8 @@ import {
   TextInput, 
   Pressable, 
   ActivityIndicator, 
-  Alert 
+  Alert,
+  Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -234,14 +235,37 @@ export default function NuevoPedidoScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Información de Pago y Fecha</Text>
 
-          <Text style={styles.label}>Fecha del evento (YYYY-MM-DD) *</Text>
-          <TextInput
-            style={styles.input}
-            value={fecha}
-            onChangeText={setFecha}
-            placeholder="Ej: 2026-05-25"
-            placeholderTextColor="#787774"
-          />
+          <Text style={styles.label}>Fecha del evento *</Text>
+          {Platform.OS === 'web' ? (
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                height: 36,
+                backgroundColor: '#ffffff',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: '#eaeaea',
+                borderRadius: 6,
+                padding: '0 10px',
+                fontSize: 13,
+                color: '#111111',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+            />
+          ) : (
+            <TextInput
+              style={styles.input}
+              value={fecha}
+              onChangeText={setFecha}
+              placeholder="Ej: 2026-05-25 (YYYY-MM-DD)"
+              placeholderTextColor="#787774"
+            />
+          )}
           
           <Text style={styles.label}>Medio de Pago</Text>
           <View style={styles.pickerRow}>

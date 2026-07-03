@@ -91,7 +91,7 @@ export default function AdminProductosScreen() {
   const handleToggleActivo = (producto: Producto) => {
     updateMutation.mutate({
       id: producto.id,
-      data: { activo: !producto.activo }
+      data: { ...producto, activo: !producto.activo }
     });
   };
 
