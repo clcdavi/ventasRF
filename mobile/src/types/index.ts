@@ -24,7 +24,7 @@ export interface Pedido {
 
 export interface Stats {
   total_pedidos: number;
-  total_productos: Record<string, number>;
+  por_producto: Record<string, number>;
   recaudacion_total: number;
   recaudacion_pendiente: number;
   recaudacion_cobrada: number;

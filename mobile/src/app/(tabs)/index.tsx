@@ -437,52 +437,21 @@ export default function DashboardScreen() {
 
           {/* Cantidades de Productos */}
           <Text style={styles.sectionTitle}>Cantidades del Evento</Text>
-          <View style={styles.statsGrid}>
-            
-            {/* Porciones de Locro */}
-            <View style={styles.productCard}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#FEF2F2' }]}>
-                <Flame size={20} color="#EF4444" />
+          <View style={{ gap: 12 }}>
+            {Object.entries(stats.por_producto || {}).map(([nombre, cantidad]) => (
+              <View key={nombre} style={styles.productCard}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#EEF2FF' }]}>
+                  <ShoppingBag size={20} color="#4F46E5" />
+                </View>
+                <View style={styles.productInfo}>
+                  <Text style={styles.productValue}>{cantidad}</Text>
+                  <Text style={styles.productLabel}>{nombre}</Text>
+                </View>
               </View>
-              <View style={styles.productInfo}>
-                <Text style={styles.productValue}>{stats.total_locro || 0}</Text>
-                <Text style={styles.productLabel}>Locro (porciones)</Text>
-              </View>
-            </View>
-
-            {/* Total Pastelitos */}
-            <View style={styles.productCard}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#FFFBEB' }]}>
-                <ShoppingBag size={20} color="#F59E0B" />
-              </View>
-              <View style={styles.productInfo}>
-                <Text style={styles.productValue}>
-                  {calculateDocenas(stats.total_batata || 0, stats.total_membrillo || 0)}
-                </Text>
-                <Text style={styles.productLabel}>Pastelitos (total)</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Desglose de Pastelitos por Sabor */}
-          <View style={styles.detailCard}>
-            <Text style={styles.detailCardTitle}>Pastelitos por Sabor</Text>
-            
-            <View style={styles.detailRow}>
-              <View style={styles.bulletGroup}>
-                <View style={[styles.bullet, { backgroundColor: '#EF4444' }]} />
-                <Text style={styles.detailName}>Membrillo</Text>
-              </View>
-              <Text style={styles.detailValue}>{stats.total_membrillo || 0} un.</Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <View style={styles.bulletGroup}>
-                <View style={[styles.bullet, { backgroundColor: '#F59E0B' }]} />
-                <Text style={styles.detailName}>Batata</Text>
-              </View>
-              <Text style={styles.detailValue}>{stats.total_batata || 0} un.</Text>
-            </View>
+            ))}
+            {Object.keys(stats.por_producto || {}).length === 0 && (
+              <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 4 }}>No hay pedidos registrados.</Text>
+            )}
           </View>
 
           {/* Total Pedidos Registrados */}
