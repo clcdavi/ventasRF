@@ -540,14 +540,25 @@ def get_stats(fecha=None):
             """, params)
             totales = _row_to_dict(cur.fetchone(), cur)
 
-            cur.execute(f"""
-                SELECT p.nombre, COALESCE(SUM(pi.cantidad), 0) as cantidad
-                FROM productos p
-                LEFT JOIN pedido_items pi ON p.id = pi.producto_id
-                LEFT JOIN pedidos ped ON pi.pedido_id = ped.id
-                {"WHERE ped.fecha_pedido::date = %s" if fecha else ""}
-                GROUP BY p.nombre
-            """, params if fecha else ())
+            if fecha:
+                cur.execute("""
+                    SELECT p.nombre, COALESCE(SUM(filtered_items.cantidad), 0) as cantidad
+                    FROM productos p
+                    LEFT JOIN (
+                        SELECT pi.producto_id, pi.cantidad
+                        FROM pedido_items pi
+                        JOIN pedidos ped ON pi.pedido_id = ped.id
+                        WHERE ped.fecha_pedido::date = %s
+                    ) filtered_items ON p.id = filtered_items.producto_id
+                    GROUP BY p.nombre
+                """, (fecha,))
+            else:
+                cur.execute("""
+                    SELECT p.nombre, COALESCE(SUM(pi.cantidad), 0) as cantidad
+                    FROM productos p
+                    LEFT JOIN pedido_items pi ON p.id = pi.producto_id
+                    GROUP BY p.nombre
+                """)
             por_producto = {row[0]: row[1] for row in cur.fetchall()}
 
             cur.execute(f"""
