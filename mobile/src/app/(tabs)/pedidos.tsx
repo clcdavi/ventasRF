@@ -19,6 +19,7 @@ import {
   Info,
   Flame,
   ShoppingBag,
+  Phone,
   ChevronRight
 } from 'lucide-react-native';
 import { api } from '../../services/api';
@@ -93,8 +94,6 @@ export default function PedidosScreen() {
 
   const renderPedidoItem = ({ item }: { item: Pedido }) => {
     const statusStyle = getStatusColor(item.estado);
-    const totalPastelitos = item.cantidad_pastelito_batata + item.cantidad_pastelito_membrillo;
-    
     return (
       <View style={styles.cardOuter}>
         <Pressable 
@@ -125,18 +124,19 @@ export default function PedidosScreen() {
             </Text>
 
             <View style={styles.productsSummary}>
-              {item.cantidad_locro > 0 && (
-                <View style={[styles.productBadge, { borderColor: '#FEE2E2', backgroundColor: '#FEF2F2' }]}>
-                  <Flame size={11} color="#EF4444" style={{ marginRight: 4 }} />
-                  <Text style={styles.productBadgeText}>Locro: {item.cantidad_locro}</Text>
-                </View>
-              )}
-              {totalPastelitos > 0 && (
-                <View style={[styles.productBadge, { borderColor: '#FEF3C7', backgroundColor: '#FFFBEB' }]}>
-                  <ShoppingBag size={11} color="#D97706" style={{ marginRight: 4 }} />
-                  <Text style={styles.productBadgeText}>Pastelitos: {totalPastelitos}</Text>
-                </View>
-              )}
+              {item.items?.map((prodItem, idx) => {
+                const isLocro = prodItem.producto_nombre?.toLowerCase().includes('locro');
+                return (
+                  <View key={idx} style={[styles.productBadge, { borderColor: isLocro ? '#FEE2E2' : '#FEF3C7', backgroundColor: isLocro ? '#FEF2F2' : '#FFFBEB' }]}>
+                    {isLocro ? (
+                      <Flame size={11} color="#EF4444" style={{ marginRight: 4 }} />
+                    ) : (
+                      <ShoppingBag size={11} color="#D97706" style={{ marginRight: 4 }} />
+                    )}
+                    <Text style={styles.productBadgeText}>{prodItem.producto_nombre}: {prodItem.cantidad}</Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
 

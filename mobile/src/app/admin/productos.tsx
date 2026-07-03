@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, TextInpu
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Plus, Save, Trash2, Edit2, X } from 'lucide-react-native';
-import { api, Producto } from '../../services/api';
+import { api } from '../../services/api';
+import { Producto } from '../../types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../stores/auth';
 

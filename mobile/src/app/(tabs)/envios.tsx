@@ -81,10 +81,10 @@ export default function EnviosScreen() {
   const handleWhatsApp = (pedido: Pedido) => {
     const cleanPhone = pedido.telefono.replace(/[^\d]/g, '');
     
-    const totalPastelitos = pedido.cantidad_pastelito_batata + pedido.cantidad_pastelito_membrillo;
     let productsText = '';
-    if (pedido.cantidad_locro > 0) productsText += `\n- ${pedido.cantidad_locro} porciones de Locro`;
-    if (totalPastelitos > 0) productsText += `\n- ${totalPastelitos} Pastelitos`;
+    pedido.items?.forEach(prodItem => {
+      productsText += `\n- ${prodItem.cantidad} ${prodItem.producto_nombre}`;
+    });
 
     const message = `Hola ${pedido.nombre_cliente}, te escribimos de Ventas RF. Tu pedido está en camino a tu domicilio (${pedido.direccion}). ${productsText}\nTotal: ${formatCurrency(pedido.monto_total)} (${pedido.pagado ? 'Cobrado' : 'A cobrar'}). ¡Muchas gracias!`;
     const encodedMessage = encodeURIComponent(message);
@@ -104,7 +104,6 @@ export default function EnviosScreen() {
   };
 
   const renderEnvioItem = ({ item }: { item: Pedido }) => {
-    const totalPastelitos = item.cantidad_pastelito_batata + item.cantidad_pastelito_membrillo;
     return (
       <View style={styles.envioCard}>
         <View style={styles.cardHeader}>
@@ -135,18 +134,19 @@ export default function EnviosScreen() {
 
         {/* Resumen de Productos */}
         <View style={styles.productsRow}>
-          {item.cantidad_locro > 0 && (
-            <View style={[styles.productBadge, { borderColor: '#FCA5A5' }]}>
-              <Flame size={12} color="#EF4444" style={{ marginRight: 4 }} />
-              <Text style={styles.productBadgeText}>Locro: {item.cantidad_locro}</Text>
-            </View>
-          )}
-          {totalPastelitos > 0 && (
-            <View style={[styles.productBadge, { borderColor: '#FCD34D' }]}>
-              <ShoppingBag size={12} color="#D97706" style={{ marginRight: 4 }} />
-              <Text style={styles.productBadgeText}>Pastelitos: {totalPastelitos}</Text>
-            </View>
-          )}
+          {item.items?.map((prodItem, idx) => {
+            const isLocro = prodItem.producto_nombre?.toLowerCase().includes('locro');
+            return (
+              <View key={idx} style={[styles.productBadge, { borderColor: isLocro ? '#FCA5A5' : '#FCD34D' }]}>
+                {isLocro ? (
+                  <Flame size={12} color="#EF4444" style={{ marginRight: 4 }} />
+                ) : (
+                  <ShoppingBag size={12} color="#D97706" style={{ marginRight: 4 }} />
+                )}
+                <Text style={styles.productBadgeText}>{prodItem.producto_nombre}: {prodItem.cantidad}</Text>
+              </View>
+            )
+          })}
         </View>
 
         {item.notas ? (

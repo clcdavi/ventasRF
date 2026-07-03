@@ -51,7 +51,7 @@ export default function PedidoDetailScreen() {
 
   // Audio state
   const [sound, setSound] = React.useState<Audio.Sound>();
-  const prevEstadoRef = React.useRef<string>();
+  const prevEstadoRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     return sound
@@ -118,6 +118,7 @@ export default function PedidoDetailScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['fechas-pedidos'] });
       Alert.alert('Éxito', 'Pedido eliminado correctamente.');
       router.back();
     },
@@ -270,26 +271,14 @@ export default function PedidoDetailScreen() {
             <Text style={styles.sectionTitle}>Detalle del Pedido</Text>
           </View>
 
-          {pedido.cantidad_locro > 0 && (
-            <View style={styles.productRow}>
-              <Text style={styles.productQty}>{pedido.cantidad_locro}x</Text>
-              <Text style={styles.productName}>Porción de Locro</Text>
-            </View>
-          )}
-
-          {pedido.cantidad_pastelito_batata > 0 && (
-            <View style={styles.productRow}>
-              <Text style={styles.productQty}>{pedido.cantidad_pastelito_batata}x</Text>
-              <Text style={styles.productName}>Pastelito de Batata</Text>
-            </View>
-          )}
-
-          {pedido.cantidad_pastelito_membrillo > 0 && (
-            <View style={styles.productRow}>
-              <Text style={styles.productQty}>{pedido.cantidad_pastelito_membrillo}x</Text>
-              <Text style={styles.productName}>Pastelito de Membrillo</Text>
-            </View>
-          )}
+          {pedido.items?.map((item, idx) => (
+            item.cantidad > 0 ? (
+              <View key={idx} style={styles.productRow}>
+                <Text style={styles.productQty}>{item.cantidad}x</Text>
+                <Text style={styles.productName}>{item.producto_nombre}</Text>
+              </View>
+            ) : null
+          ))}
         </View>
 
         {/* Detalles del Pago */}

@@ -98,6 +98,7 @@ export default function NuevoPedidoScreen() {
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['envios'] });
       queryClient.invalidateQueries({ queryKey: ['mis-pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['fechas-pedidos'] });
       Alert.alert('Éxito', 'Pedido registrado correctamente.');
       router.back();
     },
