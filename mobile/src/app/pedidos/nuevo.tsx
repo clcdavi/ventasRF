@@ -16,6 +16,7 @@ import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Minus, Plus, Save } from 'lucide-react-native';
 import { useAuth } from '../../stores/auth';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function NuevoPedidoScreen() {
   const router = useRouter();
@@ -37,6 +38,8 @@ export default function NuevoPedidoScreen() {
   const [medioPago, setMedioPago] = useState('efectivo');
   const [pagado, setPagado] = useState(false);
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]); // Current date as default
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [fechaDate, setFechaDate] = useState(new Date());
   const [notas, setNotas] = useState('');
 
   // items[producto_id] = cantidad
@@ -75,6 +78,14 @@ export default function NuevoPedidoScreen() {
       setDireccion('');
     }
   }, [tipoEntrega]);
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setFechaDate(selectedDate);
+      setFecha(selectedDate.toISOString().split('T')[0]);
+    }
+  };
 
   const handleQtyChange = (productoId: number, change: number) => {
     setItems(prev => {
@@ -284,13 +295,24 @@ export default function NuevoPedidoScreen() {
               }}
             />
           ) : (
-            <TextInput
-              style={styles.input}
-              value={fecha}
-              onChangeText={setFecha}
-              placeholder="Ej: 2026-05-25 (YYYY-MM-DD)"
-              placeholderTextColor="#787774"
-            />
+            <>
+              <Pressable style={styles.input} onPress={() => setShowDatePicker(true)}>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 13, color: '#111111', fontFamily: 'SF Pro Display' }}>
+                    {fecha}
+                  </Text>
+                </View>
+              </Pressable>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={fechaDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  style={{ marginTop: 10 }}
+                />
+              )}
+            </>
           )}
           
           <Text style={styles.label}>Medio de Pago</Text>

@@ -38,7 +38,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.470092085691-3s97ong1eao7ja6ae329h99muj9hh8ca"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "router": {},
