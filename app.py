@@ -30,14 +30,14 @@ def generar_token(user_id):
     payload = {
         'exp': datetime.utcnow() + timedelta(days=30),
         'iat': datetime.utcnow(),
-        'sub': user_id
+        'sub': str(user_id)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
 def obtener_usuario_desde_token(token):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        return payload['sub']
+        return int(payload['sub'])
     except jwt.ExpiredSignatureError:
         return 'token_expirado'
     except jwt.InvalidTokenError:
@@ -465,9 +465,9 @@ def register_user():
     rol = 'customer'
     if codigo_staff:
         codigo_staff = str(codigo_staff).strip()
-        if codigo_staff == CODIGO_ADMIN:
+        if codigo_staff == CODIGO_ADMIN or codigo_staff.upper() == CODIGO_ADMIN:
             rol = 'admin'
-        elif codigo_staff == CODIGO_REPARTIDOR:
+        elif codigo_staff == CODIGO_REPARTIDOR or codigo_staff.upper() == CODIGO_REPARTIDOR:
             rol = 'repartidor'
         else:
             return jsonify({'error': 'Código de Staff inválido.'}), 400
