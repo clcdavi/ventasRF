@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Productos{% endblock %}
+{% block body_class %}dashboard{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <h2>Gestión de Productos</h2>
+  <div class="dashboard-actions">
+    <button class="btn btn-primary" onclick="abrirModalProducto()">+ Nuevo Producto</button>
+  </div>
+</div>
+
+<div class="dashboard-stats" id="productos-list">
+  <!-- Aquí se renderizan los productos dinámicamente -->
+  <p>Cargando productos...</p>
+</div>
+
+<!-- Modal para Crear/Editar Producto -->
+<div id="modal-producto" class="modal">
+  <div class="modal-content" style="max-width: 500px;">
+    <span class="close-btn" onclick="cerrarModalProducto()">&times;</span>
+    <h2 id="modal-titulo">Nuevo Producto</h2>
+    <form id="form-producto" onsubmit="guardarProducto(event)">
+      <input type="hidden" id="prod-id" />
+      
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="prod-nombre" required />
+      </div>
+      
+      <div class="form-group">
+        <label>Descripción</label>
+        <input type="text" id="prod-descripcion" placeholder="Opcional" />
+      </div>
+      
+      <div class="form-group">
+        <label>Precio Unitario ($) *</label>
+        <input type="number" id="prod-precio" step="0.01" required />
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="prod-activo" checked />
+          Activo (Visible para clientes)
+        </label>
+      </div>
+
+      <div style="margin-top:20px; display:flex; gap:10px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Guardar</button>
+        <button type="button" class="btn btn-secondary" onclick="cerrarModalProducto()" style="flex:1;">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let productos = [];
+
+  async function cargarProductos() {
+    try {
+      const res = await fetch('/api/productos');
+      productos = await res.json();
+      renderProductos();
+    } catch (e) {
+      alert("Error al cargar productos.");
+    }
+  }
+
+  function renderProductos() {
+    const contenedor = document.getElementById('productos-list');
+    if (productos.length === 0) {
+      contenedor.innerHTML = '<p>No hay productos registrados.</p>';
+      return;
+    }
+
+    let html = '';
+    productos.forEach(p => {
+      html += `
+        <div class="stat-card" style="display:flex; justify-content:space-between; align-items:center; opacity: ${p.activo ? 1 : 0.6}">
+          <div>
+            <h3>${p.nombre}</h3>
+            <p>${p.descripcion || ''}</p>
+            <p style="font-weight:bold; color:var(--primary-color)">$${p.precio.toLocaleString('es-AR')}</p>
+            <p><small>${p.activo ? '✅ Activo' : '❌ Inactivo'}</small></p>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn btn-secondary" onclick="editarProducto(${p.id})">Editar</button>
+            <button class="btn" style="background:#e74c3c; color:white; border:none;" onclick="borrarProducto(${p.id})">Borrar</button>
+          </div>
+        </div>
+      `;
+    });
+    contenedor.innerHTML = html;
+  }
+
+  function abrirModalProducto() {
+    document.getElementById('form-producto').reset();
+    document.getElementById('prod-id').value = '';
+    document.getElementById('modal-titulo').innerText = 'Nuevo Producto';
+    document.getElementById('prod-activo').checked = true;
+    document.getElementById('modal-producto').style.display = 'flex';
+  }
+
+  function cerrarModalProducto() {
+    document.getElementById('modal-producto').style.display = 'none';
+  }
+
+  function editarProducto(id) {
+    const p = productos.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('prod-id').value = p.id;
+    document.getElementById('prod-nombre').value = p.nombre;
+    document.getElementById('prod-descripcion').value = p.descripcion || '';
+    document.getElementById('prod-precio').value = p.precio;
+    document.getElementById('prod-activo').checked = p.activo;
+    document.getElementById('modal-titulo').innerText = 'Editar Producto';
+    document.getElementById('modal-producto').style.display = 'flex';
+  }
+
+  async function guardarProducto(e) {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const data = {
+      nombre: document.getElementById('prod-nombre').value,
+      descripcion: document.getElementById('prod-descripcion').value,
+      precio: parseFloat(document.getElementById('prod-precio').value),
+      activo: document.getElementById('prod-activo').checked
+    };
+
+    try {
+      const url = id ? `/api/productos/${id}` : '/api/productos';
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        cerrarModalProducto();
+        cargarProductos();
+      } else {
+        alert(result.error || 'Error al guardar');
+      }
+    } catch (e) {
+      alert('Error de red al guardar.');
+    }
+  }
+
+  async function borrarProducto(id) {
+    if (!confirm('¿Seguro que querés borrar este producto? Solo se puede si no tiene pedidos asociados.')) return;
+    try {
+      const res = await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (res.ok) {
+        cargarProductos();
+      } else {
+        alert(result.error || 'Error al borrar.');
+      }
+    } catch (e) {
+      alert('Error de red.');
+    }
+  }
+
+  // Inicializar
+  document.addEventListener('DOMContentLoaded', cargarProductos);
+</script>
+{% endblock %}

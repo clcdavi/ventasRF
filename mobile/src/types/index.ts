@@ -1,3 +1,9 @@
+export interface PedidoItem {
+  producto_id: number;
+  cantidad: number;
+  producto_nombre?: string;
+}
+
 export interface Pedido {
   id: number;
   fecha_pedido: string;
@@ -5,9 +11,7 @@ export interface Pedido {
   telefono: string;
   email?: string;
   direccion: string;
-  cantidad_locro: number;
-  cantidad_pastelito_batata: number;
-  cantidad_pastelito_membrillo: number;
+  items?: PedidoItem[];
   medio_pago: string;
   monto_total: number;
   tipo_entrega: 'envio' | 'retiro';
@@ -20,9 +24,7 @@ export interface Pedido {
 
 export interface Stats {
   total_pedidos: number;
-  total_locro: number;
-  total_batata: number;
-  total_membrillo: number;
+  total_productos: Record<string, number>;
   recaudacion_total: number;
   recaudacion_pendiente: number;
   recaudacion_cobrada: number;
@@ -44,6 +46,14 @@ export interface Precios {
   pastelito_docena: number;
   pastelito_media_docena: number;
   pastelito_unidad: number;
+}
+
+export interface Producto {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  precio: number;
+  activo: boolean;
 }
 
 export interface User {

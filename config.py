@@ -11,7 +11,7 @@ PRECIO_PASTELITO_UNIDAD = 700
 ESTADOS = ['Pendiente', 'En preparación', 'En envío', 'Entregado']
 
 # ── Medios de pago válidos ───────────────────────────────────────────────────
-MEDIOS_PAGO = ['efectivo', 'transferencia', 'tarjeta']
+MEDIOS_PAGO = ['efectivo', 'transferencia']
 
 import os
 

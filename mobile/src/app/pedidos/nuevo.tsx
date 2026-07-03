@@ -12,7 +12,6 @@ import {
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { calcularTotal, DEFAULT_PRICES } from '../../utils/pricing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Minus, Plus, Save } from 'lucide-react-native';
 import { useAuth } from '../../stores/auth';
@@ -23,15 +22,11 @@ export default function NuevoPedidoScreen() {
   const { user } = useAuth();
   const isCustomer = user?.rol === 'customer' || user?.rol === 'user';
 
-  // Cargar precios de la API para asegurar consistencia
-  const { data: serverPrices } = useQuery({
-    queryKey: ['precios'],
-    queryFn: api.getPrecios,
+  const { data: productos = [] } = useQuery({
+    queryKey: ['productos', 'activos'],
+    queryFn: () => api.getProductos(true),
   });
 
-  const precios = serverPrices || DEFAULT_PRICES;
-
-  // Estados del Formulario
   const [nombre, setNombre] = useState(isCustomer ? user?.nombre || '' : '');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState(isCustomer ? user?.email || '' : '');
@@ -40,15 +35,12 @@ export default function NuevoPedidoScreen() {
   const [horario, setHorario] = useState('');
   const [medioPago, setMedioPago] = useState('efectivo');
   const [pagado, setPagado] = useState(false);
-  const [fecha, setFecha] = useState('2026-05-25'); // Default
+  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]); // Current date as default
   const [notas, setNotas] = useState('');
 
-  // Cantidades
-  const [locro, setLocro] = useState(0);
-  const [batata, setBatata] = useState(0);
-  const [membrillo, setMembrillo] = useState(0);
+  // items[producto_id] = cantidad
+  const [items, setItems] = useState<Record<number, number>>({});
 
-  // Auto-completar dirección si es retiro en iglesia
   useEffect(() => {
     if (tipoEntrega === 'retiro') {
       setDireccion('Retiro en Iglesia');
@@ -58,10 +50,21 @@ export default function NuevoPedidoScreen() {
     }
   }, [tipoEntrega]);
 
-  // Cálculo en tiempo real
-  const total = calcularTotal(locro, batata, membrillo, precios);
+  const handleQtyChange = (productoId: number, change: number) => {
+    setItems(prev => {
+      const current = prev[productoId] || 0;
+      const next = Math.max(0, current + change);
+      return { ...prev, [productoId]: next };
+    });
+  };
 
-  // Mutación para crear el pedido
+  const total = productos.reduce((sum, p) => {
+    const cant = items[p.id] || 0;
+    return sum + (cant * p.precio);
+  }, 0);
+
+  const totalCantidades = Object.values(items).reduce((sum, cant) => sum + cant, 0);
+
   const createMutation = useMutation({
     mutationFn: api.crearPedido,
     onSuccess: () => {
@@ -78,31 +81,26 @@ export default function NuevoPedidoScreen() {
   });
 
   const handleSubmit = () => {
-    if (!nombre.trim()) {
-      return Alert.alert('Validación', 'El nombre del cliente es obligatorio.');
-    }
-    if (!telefono.trim()) {
-      return Alert.alert('Validación', 'El teléfono es obligatorio.');
-    }
-    if (!direccion.trim()) {
-      return Alert.alert('Validación', 'La dirección es obligatoria.');
-    }
-    if (locro + batata + membrillo === 0) {
-      return Alert.alert('Validación', 'Debes agregar al menos un producto.');
-    }
+    if (!nombre.trim()) return Alert.alert('Validación', 'El nombre del cliente es obligatorio.');
+    if (!telefono.trim()) return Alert.alert('Validación', 'El teléfono es obligatorio.');
+    if (!direccion.trim()) return Alert.alert('Validación', 'La dirección es obligatoria.');
+    if (totalCantidades === 0) return Alert.alert('Validación', 'Debes agregar al menos un producto.');
+    if (!fecha.trim()) return Alert.alert('Validación', 'La fecha del evento es obligatoria.');
 
-    const payload = {
+    const payloadItems = Object.entries(items)
+      .filter(([id, cant]) => cant > 0)
+      .map(([id, cant]) => ({ producto_id: parseInt(id), cantidad: cant }));
+
+    const payload: any = {
       nombre_cliente: nombre.trim(),
       telefono: telefono.trim(),
       email: email.trim() || undefined,
       direccion: direccion.trim(),
-      cantidad_locro: locro,
-      cantidad_pastelito_batata: batata,
-      cantidad_pastelito_membrillo: membrillo,
+      items: payloadItems,
       medio_pago: medioPago,
       tipo_entrega: tipoEntrega,
       horario_entrega: horario.trim() || undefined,
-      fecha_pedido: fecha,
+      fecha_pedido: fecha.trim(),
       notas: notas.trim() || undefined,
       pagado: isCustomer ? false : pagado,
       estado: 'Pendiente'
@@ -117,12 +115,6 @@ export default function NuevoPedidoScreen() {
       currency: 'ARS',
       maximumFractionDigits: 0
     }).format(val);
-  };
-
-  const handleQtyChange = (product: 'locro' | 'batata' | 'membrillo', change: number) => {
-    if (product === 'locro') setLocro(prev => Math.max(0, prev + change));
-    if (product === 'batata') setBatata(prev => Math.max(0, prev + change));
-    if (product === 'membrillo') setMembrillo(prev => Math.max(0, prev + change));
   };
 
   return (
@@ -215,80 +207,45 @@ export default function NuevoPedidoScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Productos</Text>
           
-          {/* Fila Locro */}
-          <View style={styles.productRow}>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>Porciones de Locro</Text>
-              <Text style={styles.productPrice}>{formatCurrency(precios.locro_unitario)} /u</Text>
-            </View>
-            <View style={styles.qtyContainer}>
-              <Pressable onPress={() => handleQtyChange('locro', -1)} style={styles.qtyBtn}>
-                <Minus size={12} color="#111111" />
-              </Pressable>
-              <Text style={styles.qtyValue}>{locro}</Text>
-              <Pressable onPress={() => handleQtyChange('locro', 1)} style={styles.qtyBtn}>
-                <Plus size={12} color="#111111" />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Fila Pastelitos Batata */}
-          <View style={styles.productRow}>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>Pastelitos de Batata</Text>
-              <Text style={styles.productPrice}>{formatCurrency(precios.pastelito_unidad)} /u</Text>
-            </View>
-            <View style={styles.qtyContainer}>
-              <Pressable onPress={() => handleQtyChange('batata', -1)} style={styles.qtyBtn}>
-                <Minus size={12} color="#111111" />
-              </Pressable>
-              <Text style={styles.qtyValue}>{batata}</Text>
-              <Pressable onPress={() => handleQtyChange('batata', 1)} style={styles.qtyBtn}>
-                <Plus size={12} color="#111111" />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Fila Pastelitos Membrillo */}
-          <View style={styles.productRow}>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>Pastelitos de Membrillo</Text>
-              <Text style={styles.productPrice}>{formatCurrency(precios.pastelito_unidad)} /u</Text>
-            </View>
-            <View style={styles.qtyContainer}>
-              <Pressable onPress={() => handleQtyChange('membrillo', -1)} style={styles.qtyBtn}>
-                <Minus size={12} color="#111111" />
-              </Pressable>
-              <Text style={styles.qtyValue}>{membrillo}</Text>
-              <Pressable onPress={() => handleQtyChange('membrillo', 1)} style={styles.qtyBtn}>
-                <Plus size={12} color="#111111" />
-              </Pressable>
-            </View>
-          </View>
+          {productos.length === 0 ? (
+            <Text style={{ fontSize: 13, color: '#787774' }}>No hay productos activos disponibles.</Text>
+          ) : (
+            productos.map(p => (
+              <View key={p.id} style={styles.productRow}>
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{p.nombre}</Text>
+                  <Text style={styles.productPrice}>{formatCurrency(p.precio)} {p.descripcion ? `- ${p.descripcion}` : ''}</Text>
+                </View>
+                <View style={styles.qtyContainer}>
+                  <Pressable onPress={() => handleQtyChange(p.id, -1)} style={styles.qtyBtn}>
+                    <Minus size={12} color="#111111" />
+                  </Pressable>
+                  <Text style={styles.qtyValue}>{items[p.id] || 0}</Text>
+                  <Pressable onPress={() => handleQtyChange(p.id, 1)} style={styles.qtyBtn}>
+                    <Plus size={12} color="#111111" />
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         {/* Pago y Configuración */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Información de Pago y Fecha</Text>
 
-          <Text style={styles.label}>Fecha del evento</Text>
-          <View style={styles.pickerRow}>
-            {['2026-05-25', '2026-05-01'].map((dt) => (
-              <Pressable
-                key={dt}
-                onPress={() => setFecha(dt)}
-                style={[styles.pickerButton, fecha === dt && styles.pickerButtonActive]}
-              >
-                <Text style={[styles.pickerButtonText, fecha === dt && styles.pickerButtonTextActive]}>
-                  {dt === '2026-05-25' ? '25 de Mayo' : '1 de Mayo'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={styles.label}>Fecha del evento (YYYY-MM-DD) *</Text>
+          <TextInput
+            style={styles.input}
+            value={fecha}
+            onChangeText={setFecha}
+            placeholder="Ej: 2026-05-25"
+            placeholderTextColor="#787774"
+          />
           
           <Text style={styles.label}>Medio de Pago</Text>
           <View style={styles.pickerRow}>
-            {['efectivo', 'transferencia', 'tarjeta'].map((method) => (
+            {['efectivo', 'transferencia'].map((method) => (
               <Pressable
                 key={method}
                 onPress={() => setMedioPago(method)}
@@ -337,12 +294,12 @@ export default function NuevoPedidoScreen() {
           <Text style={styles.footerTotalValue}>{formatCurrency(total)}</Text>
         </View>
         <Pressable 
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || totalCantidades === 0}
           onPress={handleSubmit}
           style={({ pressed }) => [
             styles.submitButton, 
             pressed && styles.pressed,
-            createMutation.isPending && styles.submitButtonDisabled
+            (createMutation.isPending || totalCantidades === 0) && styles.submitButtonDisabled
           ]}
         >
           {createMutation.isPending ? (
@@ -360,15 +317,8 @@ export default function NuevoPedidoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fbfbfa',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 110,
-  },
+  container: { flex: 1, backgroundColor: '#fbfbfa' },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 110 },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 8,
@@ -412,16 +362,8 @@ const styles = StyleSheet.create({
     borderColor: '#eaeaea',
     color: '#787774',
   },
-  textArea: {
-    height: 70,
-    paddingTop: 8,
-    textAlignVertical: 'top',
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
+  textArea: { height: 70, paddingTop: 8, textAlignVertical: 'top' },
+  pickerRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   pickerButton: {
     flex: 1,
     height: 34,
@@ -432,19 +374,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pickerButtonActive: {
-    backgroundColor: '#111111',
-    borderColor: '#111111',
-  },
+  pickerButtonActive: { backgroundColor: '#111111', borderColor: '#111111' },
   pickerButtonText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#787774',
     fontFamily: 'SF Pro Display',
   },
-  pickerButtonTextActive: {
-    color: '#ffffff',
-  },
+  pickerButtonTextActive: { color: '#ffffff' },
   productRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -453,9 +390,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f1f1ef',
   },
-  productInfo: {
-    flex: 1,
-  },
+  productInfo: { flex: 1 },
   productName: {
     fontSize: 12,
     fontWeight: '700',
@@ -521,18 +456,14 @@ const styles = StyleSheet.create({
     padding: 2,
     justifyContent: 'center',
   },
-  switchActive: {
-    backgroundColor: '#346538',
-  },
+  switchActive: { backgroundColor: '#346538' },
   switchKnob: {
     width: 18,
     height: 18,
     borderRadius: 9,
     backgroundColor: '#ffffff',
   },
-  switchKnobActive: {
-    transform: [{ translateX: 18 }],
-  },
+  switchKnobActive: { transform: [{ translateX: 18 }] },
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -547,9 +478,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  totalBlock: {
-    flex: 1,
-  },
+  totalBlock: { flex: 1 },
   footerTotalLabel: {
     fontSize: 10,
     color: '#787774',
@@ -573,16 +502,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
-  submitButtonDisabled: {
-    opacity: 0.7,
-  },
+  submitButtonDisabled: { opacity: 0.7 },
   submitButtonText: {
     color: '#ffffff',
     fontWeight: '600',
     fontSize: 13,
     fontFamily: 'SF Pro Display',
   },
-  pressed: {
-    opacity: 0.9,
-  }
+  pressed: { opacity: 0.9 }
 });

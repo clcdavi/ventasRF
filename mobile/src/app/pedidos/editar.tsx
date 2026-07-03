@@ -12,7 +12,6 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import { calcularTotal, DEFAULT_PRICES } from '../../utils/pricing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Minus, Plus, Save, Info } from 'lucide-react-native';
 
@@ -22,12 +21,11 @@ export default function EditarPedidoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const pedidoId = parseInt(id || '0', 10);
 
-  // Cargar precios
-  const { data: serverPrices } = useQuery({
-    queryKey: ['precios'],
-    queryFn: api.getPrecios,
+  // Cargar productos
+  const { data: productos = [] } = useQuery({
+    queryKey: ['productos', 'activos'],
+    queryFn: () => api.getProductos(true),
   });
-  const precios = serverPrices || DEFAULT_PRICES;
 
   // Cargar detalles del pedido original
   const { data: pedido, isLoading: isLoadingPedido, isError } = useQuery({
@@ -49,10 +47,8 @@ export default function EditarPedidoScreen() {
   const [estado, setEstado] = useState('Pendiente');
   const [notas, setNotas] = useState('');
 
-  // Cantidades
-  const [locro, setLocro] = useState(0);
-  const [batata, setBatata] = useState(0);
-  const [membrillo, setMembrillo] = useState(0);
+  // items[producto_id] = cantidad
+  const [items, setItems] = useState<Record<number, number>>({});
 
   // Poblar formulario cuando se carga el pedido
   useEffect(() => {
@@ -65,12 +61,17 @@ export default function EditarPedidoScreen() {
       setHorario(pedido.horario_entrega || '');
       setMedioPago(pedido.medio_pago);
       setPagado(pedido.pagado);
-      setFecha(pedido.fecha_pedido);
+      setFecha(pedido.fecha_pedido ? pedido.fecha_pedido.substring(0, 10) : '2026-05-25');
       setEstado(pedido.estado);
       setNotas(pedido.notas || '');
-      setLocro(pedido.cantidad_locro);
-      setBatata(pedido.cantidad_pastelito_batata);
-      setMembrillo(pedido.cantidad_pastelito_membrillo);
+
+      if (pedido.items) {
+        const loadedItems: Record<number, number> = {};
+        pedido.items.forEach(it => {
+          loadedItems[it.producto_id] = it.cantidad;
+        });
+        setItems(loadedItems);
+      }
     }
   }, [pedido]);
 
@@ -82,8 +83,20 @@ export default function EditarPedidoScreen() {
     }
   }, [tipoEntrega]);
 
-  // Cálculo en tiempo real
-  const total = calcularTotal(locro, batata, membrillo, precios);
+  const handleQtyChange = (productoId: number, change: number) => {
+    setItems(prev => {
+      const current = prev[productoId] || 0;
+      const next = Math.max(0, current + change);
+      return { ...prev, [productoId]: next };
+    });
+  };
+
+  const total = productos.reduce((sum, p) => {
+    const cant = items[p.id] || 0;
+    return sum + (cant * p.precio);
+  }, 0);
+
+  const totalCantidades = Object.values(items).reduce((sum, cant) => sum + cant, 0);
 
   // Mutación para editar el pedido
   const editMutation = useMutation({
@@ -105,20 +118,23 @@ export default function EditarPedidoScreen() {
     if (!nombre.trim()) return Alert.alert('Validación', 'El nombre del cliente es obligatorio.');
     if (!telefono.trim()) return Alert.alert('Validación', 'El teléfono es obligatorio.');
     if (!direccion.trim()) return Alert.alert('Validación', 'La dirección es obligatoria.');
-    if (locro + batata + membrillo === 0) return Alert.alert('Validación', 'Debes agregar al menos un producto.');
+    if (totalCantidades === 0) return Alert.alert('Validación', 'Debes agregar al menos un producto.');
+    if (!fecha.trim()) return Alert.alert('Validación', 'La fecha del evento es obligatoria.');
+
+    const payloadItems = Object.entries(items)
+      .filter(([id, cant]) => cant > 0)
+      .map(([id, cant]) => ({ producto_id: parseInt(id), cantidad: cant }));
 
     const payload = {
       nombre_cliente: nombre.trim(),
       telefono: telefono.trim(),
       email: email.trim() || undefined,
       direccion: direccion.trim(),
-      cantidad_locro: locro,
-      cantidad_pastelito_batata: batata,
-      cantidad_pastelito_membrillo: membrillo,
+      items: payloadItems,
       medio_pago: medioPago,
       tipo_entrega: tipoEntrega,
       horario_entrega: horario.trim() || undefined,
-      fecha_pedido: fecha,
+      fecha_pedido: fecha.trim(),
       notas: notas.trim() || undefined,
       pagado,
       estado
@@ -135,12 +151,6 @@ export default function EditarPedidoScreen() {
     }).format(val);
   };
 
-  const handleQtyChange = (product: 'locro' | 'batata' | 'membrillo', change: number) => {
-    if (product === 'locro') setLocro(prev => Math.max(0, prev + change));
-    if (product === 'batata') setBatata(prev => Math.max(0, prev + change));
-    if (product === 'membrillo') setMembrillo(prev => Math.max(0, prev + change));
-  };
-
   if (isLoadingPedido) {
     return (
       <View style={styles.centerContainer}>
@@ -150,13 +160,13 @@ export default function EditarPedidoScreen() {
     );
   }
 
-  if (isError || !pedido) {
+  if (isError) {
     return (
       <View style={styles.centerContainer}>
-        <Info size={24} color="#9f2f2d" style={{ marginBottom: 12 }} />
-        <Text style={styles.errorText}>No se pudo encontrar el pedido para editar.</Text>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Volver</Text>
+        <Info size={32} color="#787774" style={{ marginBottom: 10 }} />
+        <Text style={styles.infoText}>No se pudo cargar el pedido. Verifica tu conexión.</Text>
+        <Pressable style={styles.retryButton} onPress={() => router.back()}>
+          <Text style={styles.retryButtonText}>Volver</Text>
         </Pressable>
       </View>
     );
@@ -165,16 +175,17 @@ export default function EditarPedidoScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-
+        
         {/* Sección Datos Personales */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Datos del Cliente</Text>
-
+          
           <Text style={styles.label}>Nombre y Apellido *</Text>
           <TextInput
             style={styles.input}
             value={nombre}
             onChangeText={setNombre}
+            placeholder="Ej: Juan Pérez"
             placeholderTextColor="#787774"
           />
 
@@ -183,6 +194,7 @@ export default function EditarPedidoScreen() {
             style={styles.input}
             value={telefono}
             onChangeText={setTelefono}
+            placeholder="Ej: 3416554433"
             keyboardType="phone-pad"
             placeholderTextColor="#787774"
           />
@@ -192,39 +204,17 @@ export default function EditarPedidoScreen() {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
+            placeholder="Ej: cliente@correo.com"
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#787774"
           />
         </View>
 
-        {/* Sección Estado del Pedido */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Estado General</Text>
-          <Text style={styles.label}>Estado del Pedido</Text>
-          <View style={styles.pickerRow}>
-            {['Pendiente', 'En preparación', 'En envío', 'Entregado'].map((st) => (
-              <Pressable
-                key={st}
-                onPress={() => setEstado(st)}
-                style={[
-                  styles.pickerButton,
-                  estado === st && styles.pickerButtonActive,
-                  { minWidth: '45%', marginVertical: 4 }
-                ]}
-              >
-                <Text style={[styles.pickerButtonText, estado === st && styles.pickerButtonTextActive]}>
-                  {st}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Modalidad Entrega */}
+        {/* Sección Entrega */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Modalidad de Entrega</Text>
-
+          
           <View style={styles.pickerRow}>
             <Pressable
               onPress={() => setTipoEntrega('envio')}
@@ -249,13 +239,14 @@ export default function EditarPedidoScreen() {
             style={[styles.input, tipoEntrega === 'retiro' && styles.inputDisabled]}
             value={direccion}
             onChangeText={setDireccion}
+            placeholder={tipoEntrega === 'retiro' ? 'Retiro en Iglesia' : 'Ej: Calle Falsa 123, Piso 2'}
             editable={tipoEntrega === 'envio'}
             placeholderTextColor="#787774"
           />
 
           {tipoEntrega === 'envio' && (
             <>
-              <Text style={styles.label}>Horario preferido</Text>
+              <Text style={styles.label}>Horario preferido (Opcional)</Text>
               <TextInput
                 style={styles.input}
                 value={horario}
@@ -270,81 +261,46 @@ export default function EditarPedidoScreen() {
         {/* Cantidades / Productos */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Productos</Text>
-
-          {/* Fila Locro */}
-          <View style={styles.productRow}>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>Porciones de Locro</Text>
-              <Text style={styles.productPrice}>{formatCurrency(precios.locro_unitario)} /u</Text>
-            </View>
-            <View style={styles.qtyContainer}>
-              <Pressable onPress={() => handleQtyChange('locro', -1)} style={styles.qtyBtn}>
-                <Minus size={12} color="#111111" />
-              </Pressable>
-              <Text style={styles.qtyValue}>{locro}</Text>
-              <Pressable onPress={() => handleQtyChange('locro', 1)} style={styles.qtyBtn}>
-                <Plus size={12} color="#111111" />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Fila Pastelitos Batata */}
-          <View style={styles.productRow}>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>Pastelitos de Batata</Text>
-              <Text style={styles.productPrice}>{formatCurrency(precios.pastelito_unidad)} /u</Text>
-            </View>
-            <View style={styles.qtyContainer}>
-              <Pressable onPress={() => handleQtyChange('batata', -1)} style={styles.qtyBtn}>
-                <Minus size={12} color="#111111" />
-              </Pressable>
-              <Text style={styles.qtyValue}>{batata}</Text>
-              <Pressable onPress={() => handleQtyChange('batata', 1)} style={styles.qtyBtn}>
-                <Plus size={12} color="#111111" />
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Fila Pastelitos Membrillo */}
-          <View style={styles.productRow}>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>Pastelitos de Membrillo</Text>
-              <Text style={styles.productPrice}>{formatCurrency(precios.pastelito_unidad)} /u</Text>
-            </View>
-            <View style={styles.qtyContainer}>
-              <Pressable onPress={() => handleQtyChange('membrillo', -1)} style={styles.qtyBtn}>
-                <Minus size={12} color="#111111" />
-              </Pressable>
-              <Text style={styles.qtyValue}>{membrillo}</Text>
-              <Pressable onPress={() => handleQtyChange('membrillo', 1)} style={styles.qtyBtn}>
-                <Plus size={12} color="#111111" />
-              </Pressable>
-            </View>
-          </View>
+          
+          {productos.length === 0 ? (
+            <Text style={{ fontSize: 13, color: '#787774' }}>Cargando productos...</Text>
+          ) : (
+            productos.map(p => (
+              <View key={p.id} style={styles.productRow}>
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{p.nombre}</Text>
+                  <Text style={styles.productPrice}>{formatCurrency(p.precio)} {p.descripcion ? `- ${p.descripcion}` : ''}</Text>
+                </View>
+                <View style={styles.qtyContainer}>
+                  <Pressable onPress={() => handleQtyChange(p.id, -1)} style={styles.qtyBtn}>
+                    <Minus size={12} color="#111111" />
+                  </Pressable>
+                  <Text style={styles.qtyValue}>{items[p.id] || 0}</Text>
+                  <Pressable onPress={() => handleQtyChange(p.id, 1)} style={styles.qtyBtn}>
+                    <Plus size={12} color="#111111" />
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         {/* Pago y Configuración */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Información de Pago y Fecha</Text>
 
-          <Text style={styles.label}>Fecha del evento / Pedido</Text>
-          <View style={styles.pickerRow}>
-            {['2026-05-25', '2026-05-01'].map((dt) => (
-              <Pressable
-                key={dt}
-                onPress={() => setFecha(dt)}
-                style={[styles.pickerButton, fecha === dt && styles.pickerButtonActive]}
-              >
-                <Text style={[styles.pickerButtonText, fecha === dt && styles.pickerButtonTextActive]}>
-                  {dt === '2026-05-25' ? '25 de Mayo' : '1 de Mayo'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
+          <Text style={styles.label}>Fecha del evento (YYYY-MM-DD) *</Text>
+          <TextInput
+            style={styles.input}
+            value={fecha}
+            onChangeText={setFecha}
+            placeholder="Ej: 2026-05-25"
+            placeholderTextColor="#787774"
+          />
+          
           <Text style={styles.label}>Medio de Pago</Text>
           <View style={styles.pickerRow}>
-            {['efectivo', 'transferencia', 'tarjeta'].map((method) => (
+            {['efectivo', 'transferencia'].map((method) => (
               <Pressable
                 key={method}
                 onPress={() => setMedioPago(method)}
@@ -362,7 +318,7 @@ export default function EditarPedidoScreen() {
               <Text style={styles.toggleLabel}>¿Está cobrado?</Text>
               <Text style={styles.toggleSublabel}>Marca si el cliente ya abonó el pedido</Text>
             </View>
-            <Pressable
+            <Pressable 
               onPress={() => setPagado(prev => !prev)}
               style={[styles.switch, pagado && styles.switchActive]}
             >
@@ -370,11 +326,34 @@ export default function EditarPedidoScreen() {
             </Pressable>
           </View>
 
+          <Text style={styles.label}>Estado del Pedido</Text>
+          <View style={styles.estadoContainer}>
+            {['Pendiente', 'En preparación', 'Entregado'].map((st) => (
+              <Pressable
+                key={st}
+                onPress={() => setEstado(st)}
+                style={[
+                  styles.estadoChip,
+                  estado === st && styles.estadoChipActive,
+                  estado === st && st === 'Entregado' && styles.estadoChipEntregado
+                ]}
+              >
+                <Text style={[
+                  styles.estadoText,
+                  estado === st && styles.estadoTextActive
+                ]}>
+                  {st}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
           <Text style={styles.label}>Notas adicionales</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={notas}
             onChangeText={setNotas}
+            placeholder="Ej: Tocar timbre fuerte, dejar en portería, etc."
             multiline
             numberOfLines={3}
             placeholderTextColor="#787774"
@@ -386,16 +365,16 @@ export default function EditarPedidoScreen() {
       {/* Footer Fijo con Total y Botón Guardar */}
       <View style={styles.footer}>
         <View style={styles.totalBlock}>
-          <Text style={styles.footerTotalLabel}>Total a pagar</Text>
+          <Text style={styles.footerTotalLabel}>Total actualizado</Text>
           <Text style={styles.footerTotalValue}>{formatCurrency(total)}</Text>
         </View>
-        <Pressable
-          disabled={editMutation.isPending}
+        <Pressable 
+          disabled={editMutation.isPending || totalCantidades === 0}
           onPress={handleSubmit}
           style={({ pressed }) => [
-            styles.submitButton,
+            styles.submitButton, 
             pressed && styles.pressed,
-            editMutation.isPending && styles.submitButtonDisabled
+            (editMutation.isPending || totalCantidades === 0) && styles.submitButtonDisabled
           ]}
         >
           {editMutation.isPending ? (
@@ -413,49 +392,12 @@ export default function EditarPedidoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fbfbfa',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 110,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-    backgroundColor: '#fbfbfa',
-  },
-  infoText: {
-    marginTop: 8,
-    color: '#787774',
-    fontSize: 12,
-    fontWeight: '500',
-    fontFamily: 'SF Pro Display',
-  },
-  errorText: {
-    color: '#9f2f2d',
-    fontSize: 13,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontFamily: 'SF Pro Display',
-  },
-  backButton: {
-    backgroundColor: '#111111',
-    borderRadius: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  backButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 13,
-    fontFamily: 'SF Pro Display',
-  },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fbfbfa' },
+  infoText: { fontSize: 13, color: '#787774', marginTop: 10, fontFamily: 'SF Pro Display' },
+  retryButton: { marginTop: 20, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#111111', borderRadius: 6 },
+  retryButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#fbfbfa' },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 110 },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 8,
@@ -499,17 +441,8 @@ const styles = StyleSheet.create({
     borderColor: '#eaeaea',
     color: '#787774',
   },
-  textArea: {
-    height: 70,
-    paddingTop: 8,
-    textAlignVertical: 'top',
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
+  textArea: { height: 70, paddingTop: 8, textAlignVertical: 'top' },
+  pickerRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   pickerButton: {
     flex: 1,
     height: 34,
@@ -520,19 +453,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pickerButtonActive: {
-    backgroundColor: '#111111',
-    borderColor: '#111111',
-  },
+  pickerButtonActive: { backgroundColor: '#111111', borderColor: '#111111' },
   pickerButtonText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#787774',
     fontFamily: 'SF Pro Display',
   },
-  pickerButtonTextActive: {
-    color: '#ffffff',
-  },
+  pickerButtonTextActive: { color: '#ffffff' },
   productRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -541,9 +469,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f1f1ef',
   },
-  productInfo: {
-    flex: 1,
-  },
+  productInfo: { flex: 1 },
   productName: {
     fontSize: 12,
     fontWeight: '700',
@@ -609,18 +535,27 @@ const styles = StyleSheet.create({
     padding: 2,
     justifyContent: 'center',
   },
-  switchActive: {
-    backgroundColor: '#346538',
-  },
+  switchActive: { backgroundColor: '#346538' },
   switchKnob: {
     width: 18,
     height: 18,
     borderRadius: 9,
     backgroundColor: '#ffffff',
   },
-  switchKnobActive: {
-    transform: [{ translateX: 18 }],
+  switchKnobActive: { transform: [{ translateX: 18 }] },
+  estadoContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  estadoChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#eaeaea',
+    backgroundColor: '#ffffff',
   },
+  estadoChipActive: { backgroundColor: '#111111', borderColor: '#111111' },
+  estadoChipEntregado: { backgroundColor: '#346538', borderColor: '#346538' },
+  estadoText: { fontSize: 11, color: '#787774', fontWeight: '500', fontFamily: 'SF Pro Display' },
+  estadoTextActive: { color: '#ffffff', fontWeight: '600' },
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -635,9 +570,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  totalBlock: {
-    flex: 1,
-  },
+  totalBlock: { flex: 1 },
   footerTotalLabel: {
     fontSize: 10,
     color: '#787774',
@@ -661,16 +594,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
   },
-  submitButtonDisabled: {
-    opacity: 0.7,
-  },
+  submitButtonDisabled: { opacity: 0.7 },
   submitButtonText: {
     color: '#ffffff',
     fontWeight: '600',
     fontSize: 13,
     fontFamily: 'SF Pro Display',
   },
-  pressed: {
-    opacity: 0.9,
-  }
+  pressed: { opacity: 0.9 }
 });

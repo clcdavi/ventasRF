@@ -24,6 +24,9 @@
       <a href="/reparto" class="nav-link {% if request.path == '/reparto' %}active{% endif %}">
         Reparto
       </a>
+      <a href="/productos" class="nav-link {% if request.path == '/productos' %}active{% endif %}">
+        Productos
+      </a>
       <a href="/nuevo-pedido" class="nav-link btn-primary {% if request.path == '/nuevo-pedido' %}active{% endif %}">
         + Nuevo Pedido
       </a>
@@ -41,10 +44,10 @@
   </footer>
 
   <script>
-    // Carga los precios en el footer una sola vez
-    fetch('/api/precios').then(r => r.json()).then(p => {
-      document.getElementById('footer-precios').textContent =
-        `Locro: $${p.locro_unitario.toLocaleString('es-AR')} | Pastelitos: $${p.pastelito_unidad.toLocaleString('es-AR')}/u · $${p.pastelito_media_docena.toLocaleString('es-AR')}/½doc · $${p.pastelito_docena.toLocaleString('es-AR')}/doc`;
+    // Carga los precios en el footer
+    fetch('/api/productos?activos=true').then(r => r.json()).then(productos => {
+      document.getElementById('footer-precios').textContent = 
+        productos.map(p => `${p.nombre}: $${p.precio.toLocaleString('es-AR')}`).join(' | ');
     });
   </script>
 

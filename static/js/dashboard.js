@@ -182,38 +182,9 @@ function renderTabla(pedidos) {
 }
 
 function resumenProductos(p) {
-  const partes = [];
-
-  if (p.cantidad_locro > 0) {
-    partes.push(`${p.cantidad_locro}xporciones locro`);
-  }
-
-  const bat  = p.cantidad_pastelito_batata    || 0;
-  const memb = p.cantidad_pastelito_membrillo || 0;
-  const totalUnid = bat + memb;
+  if (!p.items || p.items.length === 0) return '—';
   
-  if (totalUnid > 0) {
-    let pastStr = '';
-    const sabores = [];
-    if (bat > 0) sabores.push(`${bat} batata`);
-    if (memb > 0) sabores.push(`${memb} membrillo`);
-    const saborStr = sabores.join(', ');
-
-    if (totalUnid % 12 === 0) {
-      const docenas = totalUnid / 12;
-      pastStr = `${docenas}xdocenas pastelitos (${saborStr})`;
-    } else if (totalUnid === 6) {
-      pastStr = `media docena pastelitos (${saborStr})`;
-    } else if (totalUnid % 6 === 0 && totalUnid > 12) {
-      const docenas = Math.floor(totalUnid / 12);
-      pastStr = `${docenas} y 1/2 docenas pastelitos (${saborStr})`;
-    } else {
-      pastStr = `${totalUnid} u pastelitos (${saborStr})`;
-    }
-    partes.push(pastStr);
-  }
-
-  if (partes.length === 0) return '—';
+  const partes = p.items.map(it => `${it.cantidad}x ${it.producto_nombre}`);
   
   return `<details style="cursor: pointer; background: #f8fafc; padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0;">
             <summary style="font-weight: 600; color: #1e293b;">Ver productos</summary>
@@ -323,23 +294,35 @@ async function cargarStats() {
     setText('stat-entregados', s.por_estado?.['Entregado'] || 0);
 
     // Barras de unidades
-    const maxQty = Math.max(s.total_locro, s.total_batata, s.total_membrillo, 1);
-    setBar('bar-locro',     s.total_locro,    maxQty);
-    setBar('bar-batata',    s.total_batata,   maxQty);
-    setBar('bar-membrillo', s.total_membrillo, maxQty);
-    setText('val-locro',     s.total_locro);
-    setText('val-batata',    s.total_batata);
-    setText('val-membrillo', s.total_membrillo);
+    let maxProd = 0;
+    const productsHTML = [];
+    if (s.por_producto) {
+        for (const qty of Object.values(s.por_producto)) {
+            if (qty > maxProd) maxProd = qty;
+        }
+        for (const [nombre, qty] of Object.entries(s.por_producto)) {
+            const w = maxProd > 0 ? (qty / maxProd) * 100 : 0;
+            productsHTML.push(`
+              <div class="stat-row">
+                <span class="stat-name">${escHtml(nombre)}</span>
+                <div class="bar-wrap"><div class="bar bar-gold" style="width:${w}%"></div></div>
+                <span class="stat-val">${qty}</span>
+              </div>
+            `);
+        }
+    }
+    const container = document.getElementById('dynamic-products-stats');
+    if (container) {
+      container.innerHTML = productsHTML.join('');
+    }
 
     // Barras de ingresos por pago
     const pagos = s.ingresos_por_pago || {};
-    const maxPago = Math.max(pagos.efectivo || 0, pagos.transferencia || 0, pagos.tarjeta || 0, 1);
+    const maxPago = Math.max(pagos.efectivo || 0, pagos.transferencia || 0, 1);
     setBar('bar-efectivo',      pagos.efectivo      || 0, maxPago);
     setBar('bar-transferencia', pagos.transferencia  || 0, maxPago);
-    setBar('bar-tarjeta',       pagos.tarjeta        || 0, maxPago);
     setText('val-efectivo',      `$${fmt(pagos.efectivo      || 0)}`);
     setText('val-transferencia', `$${fmt(pagos.transferencia  || 0)}`);
-    setText('val-tarjeta',       `$${fmt(pagos.tarjeta        || 0)}`);
 
   } catch (err) {
     console.error('Error al cargar stats:', err);

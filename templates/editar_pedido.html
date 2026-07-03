@@ -50,50 +50,8 @@
     <h2 class="section-title">Productos</h2>
     <p class="section-hint">Locro en porciones · Pastelitos por unidad</p>
 
-    <div class="productos-grid">
-
-      <div class="producto-item">
-        <label for="cantidad_locro">
-          Locro
-          <span class="precio-hint" id="hint-locro">$10.000/porción</span>
-        </label>
-        <div class="qty-input-wrap">
-          <button type="button" class="qty-btn" data-target="cantidad_locro" data-delta="-1">−</button>
-          <input type="number" id="cantidad_locro" name="cantidad_locro"
-                 value="{{ pedido.cantidad_locro }}" min="0" class="qty-input" />
-          <button type="button" class="qty-btn" data-target="cantidad_locro" data-delta="1">+</button>
-        </div>
-        <span class="subtotal" id="sub-locro">$0</span>
-      </div>
-
-      <div class="producto-item producto-item--wide">
-        <label>
-          Pastelitos
-          <span class="precio-hint" id="hint-pastelito">$700/u · $4.000/½doc · $8.000/doc</span>
-        </label>
-        <div class="pastelitos-grid">
-          <div class="sabor-row">
-            <span class="sabor-label">Batata</span>
-            <div class="qty-input-wrap">
-              <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="-1">−</button>
-              <input type="number" id="cantidad_pastelito_batata" name="cantidad_pastelito_batata"
-                     value="{{ pedido.cantidad_pastelito_batata }}" min="0" class="qty-input" />
-              <button type="button" class="qty-btn" data-target="cantidad_pastelito_batata" data-delta="1">+</button>
-            </div>
-          </div>
-          <div class="sabor-row">
-            <span class="sabor-label">Membrillo</span>
-            <div class="qty-input-wrap">
-              <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="-1">−</button>
-              <input type="number" id="cantidad_pastelito_membrillo" name="cantidad_pastelito_membrillo"
-                     value="{{ pedido.cantidad_pastelito_membrillo }}" min="0" class="qty-input" />
-              <button type="button" class="qty-btn" data-target="cantidad_pastelito_membrillo" data-delta="1">+</button>
-            </div>
-          </div>
-        </div>
-        <span class="subtotal" id="sub-pastelitos">$0</span>
-      </div>
-
+    <div class="productos-grid" id="productos-grid">
+      <p>Cargando productos...</p>
     </div>
 
     <div class="total-box">
@@ -191,5 +149,8 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  window.PEDIDO_ITEMS = {{ pedido.items | tojson | safe }};
+</script>
 <script src="{{ url_for('static', filename='js/order_form.js') }}"></script>
 {% endblock %}

@@ -97,13 +97,15 @@ def validar_pedido(data):
             errores.append(f'El campo {field.replace("_", " ")} no puede contener los caracteres "<" o ">".')
 
     try:
-        qty_locro     = int(data.get('cantidad_locro', 0))
-        qty_batata    = int(data.get('cantidad_pastelito_batata', 0))
-        qty_membrillo = int(data.get('cantidad_pastelito_membrillo', 0))
-        if qty_locro < 0 or qty_batata < 0 or qty_membrillo < 0:
-            errores.append('Las cantidades no pueden ser negativas.')
-        if qty_locro + qty_batata + qty_membrillo == 0:
+        items = data.get('items', [])
+        if not items:
             errores.append('El pedido debe tener al menos un producto.')
+        else:
+            for it in items:
+                cant = int(it.get('cantidad', 0))
+                if cant < 0:
+                    errores.append('Las cantidades no pueden ser negativas.')
+                    break
     except (ValueError, TypeError):
         errores.append('Las cantidades deben ser números enteros.')
     return errores
@@ -120,6 +122,9 @@ def index():
 def dashboard():
     return render_template('dashboard.html')
 
+@app.route('/productos')
+def gestion_productos():
+    return render_template('productos.html')
 
 @app.route('/nuevo-pedido')
 def nuevo_pedido():
@@ -151,6 +156,45 @@ def editar_pedido_submit(pedido_id):
     if not ok:
         return jsonify({'error': 'No se pudo actualizar el pedido.'}), 500
     return jsonify({'ok': True, 'monto_total': monto_total})
+
+
+# ── API de productos ─────────────────────────────────────────────────────────
+
+@app.route('/api/productos', methods=['GET'])
+def listar_productos():
+    solo_activos = request.args.get('activos') == 'true'
+    productos = models.get_productos(solo_activos=solo_activos)
+    return jsonify(productos)
+
+@app.route('/api/productos', methods=['POST'])
+def crear_producto():
+    data = request.get_json()
+    if not data or not data.get('nombre') or not data.get('precio'):
+        return jsonify({'error': 'Faltan datos obligatorios (nombre, precio).'}), 400
+    try:
+        p_id = models.create_producto(data)
+        return jsonify({'ok': True, 'id': p_id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/productos/<int:prod_id>', methods=['PUT'])
+def modificar_producto(prod_id):
+    data = request.get_json()
+    try:
+        ok = models.update_producto(prod_id, data)
+        if not ok:
+            return jsonify({'error': 'Producto no encontrado.'}), 404
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/productos/<int:prod_id>', methods=['DELETE'])
+def borrar_producto(prod_id):
+    try:
+        models.delete_producto(prod_id)
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': 'No se puede eliminar un producto que ya tiene pedidos asociados.'}), 409
 
 
 # ── API de pedidos ───────────────────────────────────────────────────────────

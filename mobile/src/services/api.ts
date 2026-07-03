@@ -1,6 +1,6 @@
 import { storage } from '../utils/storage';
 import { API_BASE_URL } from './config';
-import { Pedido, Stats, Contacto, Precios, User } from '../types';
+import { Pedido, Stats, Contacto, Precios, User, Producto } from '../types';
 
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -112,9 +112,15 @@ export const api = {
     return fetchJson<Stats>(`/api/stats${query}`);
   },
 
-  // Obtener la configuración actual de precios
+  // Obtener la configuración actual de precios (deprecated, use getProductos)
   getPrecios: () => {
     return fetchJson<Precios>('/api/precios');
+  },
+
+  // Obtener productos
+  getProductos: (activos?: boolean) => {
+    const query = activos !== undefined ? `?activos=${activos}` : '';
+    return fetchJson<Producto[]>(`/api/productos${query}`);
   },
 
   // Obtener contactos / directorio de clientes
