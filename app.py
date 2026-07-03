@@ -19,12 +19,24 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 from flask_cors import CORS
+import traceback
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 CORS(app) # Habilita CORS para todas las rutas y orígenes
 
-# Clave secreta para firmar tokens
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret-key-para-ventas-rf'
+@app.errorhandler(Exception)
+def handle_exception(e):
+    if isinstance(e, HTTPException):
+        return jsonify(error=e.description), e.code
+    print(f"Error inesperado: {str(e)}")
+    traceback.print_exc()
+    return jsonify(error="Error interno del servidor", details=str(e)), 500
+
+
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("Falta la variable de entorno JWT_SECRET_KEY. Es requerida para la seguridad del sistema.")
 
 def generar_token(user_id):
     payload = {
@@ -202,15 +214,20 @@ def borrar_producto(prod_id):
 @app.route('/api/pedidos', methods=['POST'])
 def crear_pedido():
     data = request.get_json() or request.form.to_dict()
-    errores = validar_pedido(data)
-    if errores:
+    from schemas import pedido_schema
+    from marshmallow import ValidationError
+    try:
+        valid_data = pedido_schema.load(data)
+    except ValidationError as err:
+        # Formatear errores de marshmallow en una lista de strings
+        errores = [f"{campo}: {msgs[0]}" for campo, msgs in err.messages.items()]
         return jsonify({'errores': errores}), 400
 
     user_id = obtener_usuario_id_opcional()
     if user_id:
-        data['usuario_id'] = user_id
+        valid_data['usuario_id'] = user_id
 
-    pedido_id, monto_total = models.create_pedido(data)
+    pedido_id, monto_total = models.create_pedido(valid_data)
     return jsonify({'ok': True, 'id': pedido_id, 'monto_total': monto_total}), 201
 
 
@@ -262,15 +279,20 @@ def cambiar_pagado(pedido_id):
 @app.route('/api/pedidos/<int:pedido_id>/estado', methods=['PUT'])
 def cambiar_estado(pedido_id):
     data = request.get_json()
-    if not data or 'estado' not in data:
-        return jsonify({'error': 'Falta el campo estado.'}), 400
+    from schemas import cambio_estado_schema
+    from marshmallow import ValidationError
     try:
-        ok = models.update_estado(pedido_id, data['estado'])
+        valid_data = cambio_estado_schema.load(data or {})
+    except ValidationError as err:
+        return jsonify({'error': 'Estado inválido.'}), 400
+        
+    try:
+        ok = models.update_estado(pedido_id, valid_data['estado'])
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     if not ok:
         return jsonify({'error': 'Pedido no encontrado.'}), 404
-    return jsonify({'ok': True, 'estado': data['estado']})
+    return jsonify({'ok': True, 'estado': valid_data['estado']})
 
 
 @app.route('/api/pedidos/<int:pedido_id>', methods=['DELETE'])
