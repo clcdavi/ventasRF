@@ -502,6 +502,35 @@ def update_pedido(pedido_id, data):
         conn.close()
 
 
+def update_estado(pedido_id, estado):
+    from config import ESTADOS
+    if estado not in ESTADOS:
+        raise ValueError(f"Estado inválido: {estado}")
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE pedidos SET estado = %s, fecha_actualizacion = NOW() WHERE id = %s", (estado, pedido_id))
+            if cur.rowcount == 0:
+                return False
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+def update_pagado(pedido_id, pagado):
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE pedidos SET pagado = %s, fecha_actualizacion = NOW() WHERE id = %s", (pagado, pedido_id))
+            if cur.rowcount == 0:
+                return False
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
 def delete_pedido(pedido_id):
     pedido = get_pedido_by_id(pedido_id)
     if not pedido:

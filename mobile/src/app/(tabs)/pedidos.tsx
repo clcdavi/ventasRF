@@ -47,6 +47,7 @@ export default function PedidosScreen() {
           fecha: selectedDate === 'all' ? undefined : selectedDate,
           q: searchQuery || undefined,
         }),
+    refetchInterval: isCustomer ? 10000 : false,
   });
 
   const { data: fechasPedidos = [] } = useQuery({
