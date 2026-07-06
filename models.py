@@ -140,8 +140,18 @@ def get_pedidos_by_usuario(usuario_id):
 def create_pedido(data):
     monto_total = 0.0
     items = data.get('items', [])
+    processed_items = []
+    
     for item in items:
-        monto_total += item['precio_unitario'] * item['cantidad']
+        prod = Producto.query.get(item['producto_id'])
+        if prod:
+            precio_unitario = prod.precio
+            monto_total += precio_unitario * item['cantidad']
+            processed_items.append({
+                'producto_id': item['producto_id'],
+                'cantidad': item['cantidad'],
+                'precio_unitario': precio_unitario
+            })
 
     nuevo_pedido = Pedido(
         nombre_cliente=data['nombre_cliente'],
@@ -164,7 +174,7 @@ def create_pedido(data):
     db.session.add(nuevo_pedido)
     db.session.flush() # get the id
     
-    for item in items:
+    for item in processed_items:
         pi = PedidoItem(
             pedido_id=nuevo_pedido.id,
             producto_id=item['producto_id'],

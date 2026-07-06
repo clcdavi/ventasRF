@@ -13,6 +13,10 @@ class PedidoSchema(Schema):
     horario_entrega = fields.String(allow_none=True, validate=validate.Length(max=100))
     notas = fields.String(allow_none=True, validate=validate.Length(max=500))
     tipo_entrega = fields.String(load_default='envio', validate=validate.OneOf(['envio', 'retiro']))
+    fecha_pedido = fields.String(allow_none=True)
+    estado = fields.String(allow_none=True)
+    pagado = fields.Boolean(allow_none=True)
+    items = fields.List(fields.Dict(), allow_none=True)
 
 class CambioEstadoSchema(Schema):
     estado = fields.String(required=True, validate=validate.OneOf(ESTADOS))

@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     backgroundColor: 'transparent',
     fontSize: 13,
-    outline: 'none',
+    ...({ outline: 'none' } as any),
   },
   dateChip: {
     paddingVertical: 8,
