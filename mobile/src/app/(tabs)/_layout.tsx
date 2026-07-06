@@ -30,7 +30,7 @@ export default function TabLayout() {
           tabBarLabelStyle: {
             fontSize: 10,
             fontWeight: '700',
-            fontFamily: 'SF Pro Display',
+            fontFamily: 'System',
             paddingBottom: 4,
           },
           tabBarStyle: {

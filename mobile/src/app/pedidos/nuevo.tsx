@@ -298,7 +298,7 @@ export default function NuevoPedidoScreen() {
             <>
               <Pressable style={styles.input} onPress={() => setShowDatePicker(true)}>
                 <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 13, color: '#111111', fontFamily: 'SF Pro Display' }}>
+                  <Text style={{ fontSize: 13, color: '#111111', fontFamily: 'System' }}>
                     {fecha}
                   </Text>
                 </View>
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   label: {
     fontSize: 10,
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   input: {
     height: 36,
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 13,
     color: '#111111',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   inputDisabled: {
     backgroundColor: '#f9f9f8',
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#787774',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   pickerButtonTextActive: { color: '#ffffff' },
   productRow: {
@@ -467,13 +467,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#2f3437',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   productPrice: {
     fontSize: 11,
     color: '#787774',
     marginTop: 2,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   qtyContainer: {
     flexDirection: 'row',
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#111111',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   toggleRow: {
     flexDirection: 'row',
@@ -512,13 +512,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#2f3437',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   toggleSublabel: {
     fontSize: 11,
     color: '#787774',
     marginTop: 2,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   switch: {
     width: 40,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#787774',
     fontWeight: '500',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
     textTransform: 'uppercase',
   },
   footerTotalValue: {
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111111',
     marginTop: 2,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   submitButton: {
     backgroundColor: '#111111',
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '600',
     fontSize: 13,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   pressed: { opacity: 0.9 }
 });

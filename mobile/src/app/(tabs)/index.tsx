@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput, Modal } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { 
@@ -13,7 +13,8 @@ import {
   CheckCircle,
   ChevronRight,
   LogOut,
-  Check
+  Check,
+  ChevronDown
 } from 'lucide-react-native';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +25,8 @@ export default function DashboardScreen() {
   const { user, signOut, updateUser } = useAuth();
   const [viewAsCustomer, setViewAsCustomer] = useState(false);
   const isCustomer = user?.rol === 'customer' || user?.rol === 'user' || viewAsCustomer;
-  const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Preselección 25 de Mayo
+  const [selectedDate, setSelectedDate] = useState<string>('all');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Estados para activar código staff
   const [staffCode, setStaffCode] = useState('');
@@ -362,32 +364,58 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Selector de Evento / Fecha (Píldoras Flotantes) */}
+      {/* Selector de Evento / Fecha (Dropdown) */}
       <View style={styles.selectorContainer}>
-        {datesList.map((d) => (
-          <Pressable
-            key={d.value}
-            onPress={() => setSelectedDate(d.value)}
-            style={({ pressed }) => [
-              styles.selectorChip,
-              selectedDate === d.value && styles.selectorChipActive,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <Calendar 
-              size={14} 
-              color={selectedDate === d.value ? '#FFFFFF' : '#718096'} 
-              style={{ marginRight: 6 }} 
-            />
-            <Text style={[
-              styles.selectorChipText,
-              selectedDate === d.value && styles.selectorChipTextActive
-            ]}>
-              {d.label}
-            </Text>
-          </Pressable>
-        ))}
+        <Pressable 
+          style={styles.dropdownButton}
+          onPress={() => setIsDropdownOpen(true)}
+        >
+          <Calendar size={18} color="#4F46E5" style={{ marginRight: 8 }} />
+          <Text style={styles.dropdownButtonText}>
+            {datesList.find(d => d.value === selectedDate)?.label || 'Seleccionar fecha...'}
+          </Text>
+          <ChevronDown size={18} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+        </Pressable>
       </View>
+
+      <Modal
+        visible={isDropdownOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsDropdownOpen(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setIsDropdownOpen(false)}
+        >
+          <View style={styles.dropdownMenu}>
+            {datesList.map((d) => (
+              <Pressable
+                key={d.value}
+                onPress={() => {
+                  setSelectedDate(d.value);
+                  setIsDropdownOpen(false);
+                }}
+                style={({ pressed }) => [
+                  styles.dropdownMenuItem,
+                  selectedDate === d.value && styles.dropdownMenuItemActive,
+                  pressed && { backgroundColor: '#F1F5F9' }
+                ]}
+              >
+                <Text style={[
+                  styles.dropdownMenuText,
+                  selectedDate === d.value && styles.dropdownMenuTextActive
+                ]}>
+                  {d.label}
+                </Text>
+                {selectedDate === d.value && (
+                  <Check size={16} color="#4F46E5" style={{ marginLeft: 'auto' }} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -661,44 +689,69 @@ const styles = StyleSheet.create({
     }),
   },
   selectorContainer: {
-    flexDirection: 'row',
     paddingHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 10,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  selectorChip: {
+  dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  dropdownButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  dropdownMenu: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 340,
+    padding: 8,
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
       },
-      android: {
-        elevation: 1,
-      },
+      android: { elevation: 10 },
     }),
   },
-  selectorChipActive: {
-    backgroundColor: '#1E293B',
-    borderColor: '#1E293B',
+  dropdownMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 2,
   },
-  selectorChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748B',
+  dropdownMenuItemActive: {
+    backgroundColor: '#EEF2FF',
   },
-  selectorChipTextActive: {
-    color: '#FFFFFF',
+  dropdownMenuText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#334155',
+  },
+  dropdownMenuTextActive: {
+    color: '#4F46E5',
+    fontWeight: '700',
   },
   scrollContainer: {
     flex: 1,
@@ -1039,7 +1092,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1E293B',
     textAlign: 'center',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   customerWelcomeDesc: {
     fontSize: 13,
@@ -1047,7 +1100,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 18,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   customerActionButton: {
     backgroundColor: '#4F46E5',
@@ -1063,7 +1116,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   activeOrderCard: {
     backgroundColor: '#FFFFFF',

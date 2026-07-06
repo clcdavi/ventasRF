@@ -171,18 +171,24 @@ export default function PedidoDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Eliminar Pedido',
-      '¿Estás seguro de que deseas eliminar este pedido de forma permanente? Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
-          onPress: () => deleteMutation.mutate()
-        }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (window.confirm('¿Estás seguro de que deseas eliminar este pedido de forma permanente? Esta acción no se puede deshacer.')) {
+        deleteMutation.mutate();
+      }
+    } else {
+      Alert.alert(
+        'Eliminar Pedido',
+        '¿Estás seguro de que deseas eliminar este pedido de forma permanente? Esta acción no se puede deshacer.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { 
+            text: 'Eliminar', 
+            style: 'destructive',
+            onPress: () => deleteMutation.mutate()
+          }
+        ]
+      );
+    }
   };
 
   if (isLoading) {
@@ -424,7 +430,7 @@ const styles = StyleSheet.create({
     color: '#787774',
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   errorText: {
     fontSize: 13,
@@ -432,7 +438,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginBottom: 20,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   backButton: {
     backgroundColor: '#111111',
@@ -443,7 +449,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#ffffff',
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
     fontSize: 13,
   },
   headerCard: {
@@ -464,7 +470,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#111111',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   dateRow: {
     flexDirection: 'row',
@@ -475,7 +481,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#787774',
     fontWeight: '500',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   statusBadge: {
     paddingVertical: 4,
@@ -485,7 +491,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '700',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   sectionCard: {
     backgroundColor: '#ffffff',
@@ -506,13 +512,13 @@ const styles = StyleSheet.create({
     color: '#787774',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   detailName: {
     fontSize: 16,
     fontWeight: '700',
     color: '#111111',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   contactButtonsRow: {
     flexDirection: 'row',
@@ -534,7 +540,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#111111',
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   contactWhatsappButton: {
     flexDirection: 'row',
@@ -548,13 +554,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#346538',
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   detailEmail: {
     fontSize: 12,
     color: '#787774',
     marginTop: 6,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   divider: {
     height: 1,
@@ -569,14 +575,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#787774',
     fontWeight: '500',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   addressValue: {
     fontSize: 13,
     fontWeight: '600',
     color: '#2f3437',
     marginTop: 2,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   mapsLink: {
     marginTop: 6,
@@ -585,7 +591,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#026aa2',
     fontWeight: '700',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   productRow: {
     flexDirection: 'row',
@@ -599,13 +605,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111111',
     width: 26,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   productName: {
     fontSize: 12,
     color: '#2f3437',
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   paymentInfoRow: {
     flexDirection: 'row',
@@ -617,19 +623,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#787774',
     fontWeight: '500',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   paymentValue: {
     fontSize: 12,
     fontWeight: '600',
     color: '#2f3437',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   paymentTotalValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#111111',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   paymentStatusBadge: {
     paddingVertical: 4,
@@ -645,7 +651,7 @@ const styles = StyleSheet.create({
   paymentStatusBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   badgeTextPaid: {
     color: '#346538',
@@ -665,7 +671,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#956400',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   notesBox: {
     flexDirection: 'row',
@@ -680,7 +686,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#787774',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
     textTransform: 'uppercase',
   },
   notesText: {
@@ -688,7 +694,7 @@ const styles = StyleSheet.create({
     color: '#2f3437',
     marginTop: 2,
     lineHeight: 14,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   sectionHeader: {
     fontSize: 11,
@@ -699,7 +705,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     paddingLeft: 4,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   actionsCard: {
     backgroundColor: '#ffffff',
@@ -713,7 +719,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2f3437',
     marginBottom: 10,
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   statusButtonsGrid: {
     flexDirection: 'row',
@@ -740,7 +746,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#787774',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   statusSelectButtonTextActive: {
     color: '#ffffff',
@@ -761,7 +767,7 @@ const styles = StyleSheet.create({
   bigActionButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   btnConfirmPaymentText: {
     color: '#ffffff',
@@ -789,7 +795,7 @@ const styles = StyleSheet.create({
     color: '#111111',
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   },
   deleteButton: {
     flex: 1,
@@ -804,6 +810,6 @@ const styles = StyleSheet.create({
     color: '#9f2f2d',
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'SF Pro Display',
+    fontFamily: 'System',
   }
 });
