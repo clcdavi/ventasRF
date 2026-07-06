@@ -23,15 +23,20 @@ import {
   Calendar,
   Flame,
   ShoppingBag,
-  Info
+  Info,
+  User,
+  Route,
+  Navigation
 } from 'lucide-react-native';
 import { formatDateToLabel } from '../../utils/date';
 
 export default function EnviosScreen() {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-  // Obtener pedidos de tipo 'envio' que no estén Entregados
+  // Obtener pedidos de tipo 'envio'
   const { data: envios, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['envios', selectedDate],
     queryFn: () => api.getEnviosPendientes(selectedDate === 'all' ? undefined : selectedDate),
@@ -60,6 +65,17 @@ export default function EnviosScreen() {
     },
     onError: () => {
       Alert.alert('Error', 'No se pudo actualizar el estado del pedido.');
+    }
+  });
+
+  const assignRepartidorMutation = useMutation({
+    mutationFn: ({ id, repartidor }: { id: number, repartidor: string }) => api.cambiarRepartidor(id, repartidor),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['envios'] });
+      Alert.alert('Éxito', 'Repartidor asignado correctamente.');
+    },
+    onError: () => {
+      Alert.alert('Error', 'No se pudo asignar el repartidor.');
     }
   });
 
@@ -103,10 +119,87 @@ export default function EnviosScreen() {
     });
   };
 
+  const handleAssignRepartidor = (pedido: Pedido) => {
+    Alert.prompt(
+      'Asignar Repartidor',
+      'Ingresa el nombre del repartidor para este pedido:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Asignar', 
+          onPress: (text) => {
+            if (text && text.trim().length > 0) {
+              assignRepartidorMutation.mutate({ id: pedido.id, repartidor: text.trim() });
+            }
+          }
+        }
+      ],
+      'plain-text',
+      pedido.repartidor || ''
+    );
+  };
+
+  const toggleSelection = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(selId => selId !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const generateRoute = () => {
+    if (selectedIds.length === 0) return;
+    
+    // Solo permitir hasta 10 destinos (9 waypoints + 1 destination)
+    if (selectedIds.length > 10) {
+      Alert.alert('Límite excedido', 'Google Maps solo permite un máximo de 10 destinos a la vez.');
+      return;
+    }
+
+    const selectedPedidos = envios?.filter(p => selectedIds.includes(p.id)) || [];
+    if (selectedPedidos.length === 0) return;
+
+    // El último pedido es el destino final
+    const destination = selectedPedidos[selectedPedidos.length - 1];
+    const waypoints = selectedPedidos.slice(0, -1);
+
+    let url = `https://www.google.com/maps/dir/?api=1`;
+    url += `&destination=${encodeURIComponent(destination.direccion)}`;
+    
+    if (waypoints.length > 0) {
+      const waypointsStr = waypoints.map(p => encodeURIComponent(p.direccion)).join('|');
+      url += `&waypoints=${waypointsStr}`;
+    }
+
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'No se pudo abrir Google Maps.');
+    });
+    
+    // Opcional: salir del modo selección después de armar la ruta
+    setIsSelectionMode(false);
+    setSelectedIds([]);
+  };
+
   const renderEnvioItem = ({ item }: { item: Pedido }) => {
+    const isEntregado = item.estado === 'Entregado';
+    const isSelected = selectedIds.includes(item.id);
+
     return (
-      <View style={styles.envioCard}>
+      <Pressable 
+        style={[
+          styles.envioCard, 
+          isEntregado && styles.envioCardEntregado,
+          isSelected && styles.envioCardSelected
+        ]}
+        onPress={() => isSelectionMode ? toggleSelection(item.id) : null}
+        disabled={!isSelectionMode && !isEntregado}
+      >
         <View style={styles.cardHeader}>
+          {isSelectionMode && !isEntregado && (
+            <View style={[styles.selectionCircle, isSelected && styles.selectionCircleActive]}>
+              {isSelected && <CheckCircle size={14} color="#FFFFFF" />}
+            </View>
+          )}
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={styles.clientName}>{item.nombre_cliente}</Text>
             {item.horario_entrega ? (
@@ -156,72 +249,86 @@ export default function EnviosScreen() {
           </View>
         ) : null}
 
+        {item.repartidor ? (
+          <View style={styles.repartidorContainer}>
+            <User size={14} color="#4F46E5" style={{ marginRight: 6 }} />
+            <Text style={styles.repartidorText}>Repartidor: {item.repartidor}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.cardDivider} />
 
         {/* Acciones de Reparto */}
-        <View style={styles.actionsRow}>
-          {/* Llamada */}
-          <Pressable 
-            onPress={() => handleCall(item.telefono)}
-            style={({ pressed }) => [
-              styles.actionIconButton,
-              { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <Phone size={16} color="#3B82F6" />
-          </Pressable>
+        {!isEntregado && !isSelectionMode ? (
+          <View style={styles.actionsRow}>
+            {/* Llamada */}
+            <Pressable 
+              onPress={() => handleCall(item.telefono)}
+              style={({ pressed }) => [
+                styles.actionIconButton,
+                { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
+                pressed && styles.buttonPressed
+              ]}
+            >
+              <Phone size={16} color="#3B82F6" />
+            </Pressable>
 
-          {/* WhatsApp */}
-          <Pressable 
-            onPress={() => handleWhatsApp(item)}
-            style={({ pressed }) => [
-              styles.actionIconButton,
-              { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <MessageCircle size={16} color="#10B981" />
-          </Pressable>
+            {/* WhatsApp */}
+            <Pressable 
+              onPress={() => handleWhatsApp(item)}
+              style={({ pressed }) => [
+                styles.actionIconButton,
+                { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+                pressed && styles.buttonPressed
+              ]}
+            >
+              <MessageCircle size={16} color="#10B981" />
+            </Pressable>
 
-          {/* Mapa */}
-          <Pressable 
-            onPress={() => handleMaps(item.direccion)}
-            style={({ pressed }) => [
-              styles.actionIconButton,
-              { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <MapPin size={16} color="#D97706" />
-          </Pressable>
+            {/* Repartidor */}
+            <Pressable 
+              onPress={() => handleAssignRepartidor(item)}
+              style={({ pressed }) => [
+                styles.actionIconButton,
+                { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
+                pressed && styles.buttonPressed
+              ]}
+            >
+              <User size={16} color="#4F46E5" />
+            </Pressable>
 
-          {/* Botón Entregado */}
-          <Pressable 
-            onPress={() => {
-              Alert.alert(
-                'Entregar Pedido',
-                `¿Marcar el pedido de ${item.nombre_cliente} como Entregado?`,
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  { 
-                    text: 'Confirmar', 
-                    style: 'default',
-                    onPress: () => markAsDeliveredMutation.mutate(item.id)
-                  }
-                ]
-              );
-            }}
-            style={({ pressed }) => [
-              styles.deliverButton,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <CheckCircle size={14} color="#FFFFFF" style={{ marginRight: 6 }} strokeWidth={3} />
-            <Text style={styles.deliverButtonText}>Entregado</Text>
-          </Pressable>
-        </View>
-      </View>
+            {/* Botón Entregado */}
+            <Pressable 
+              onPress={() => {
+                Alert.alert(
+                  'Entregar Pedido',
+                  `¿Marcar el pedido de ${item.nombre_cliente} como Entregado?`,
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { 
+                      text: 'Confirmar', 
+                      style: 'default',
+                      onPress: () => markAsDeliveredMutation.mutate(item.id)
+                    }
+                  ]
+                );
+              }}
+              style={({ pressed }) => [
+                styles.deliverButton,
+                pressed && styles.buttonPressed
+              ]}
+            >
+              <CheckCircle size={14} color="#FFFFFF" style={{ marginRight: 6 }} strokeWidth={3} />
+              <Text style={styles.deliverButtonText}>Entregado</Text>
+            </Pressable>
+          </View>
+        ) : isEntregado ? (
+          <View style={styles.entregadoBanner}>
+            <CheckCircle size={16} color="#10B981" style={{ marginRight: 8 }} />
+            <Text style={styles.entregadoBannerText}>Pedido Entregado</Text>
+          </View>
+        ) : null}
+      </Pressable>
     );
   };
 
@@ -281,6 +388,43 @@ export default function EnviosScreen() {
             </View>
           }
         />
+      )}
+
+      {/* Floating Action Button (Ruta) */}
+      {!isLoading && (envios?.length || 0) > 0 && (
+        <View style={styles.fabContainer}>
+          {isSelectionMode ? (
+            <View style={styles.selectionModeActions}>
+              <Pressable
+                style={[styles.fab, { backgroundColor: '#94A3B8', marginRight: 10 }]}
+                onPress={() => {
+                  setIsSelectionMode(false);
+                  setSelectedIds([]);
+                }}
+              >
+                <Text style={styles.fabText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.fab, selectedIds.length === 0 && { opacity: 0.5 }]}
+                onPress={generateRoute}
+                disabled={selectedIds.length === 0}
+              >
+                <Navigation size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.fabText}>
+                  Abrir Maps ({selectedIds.length})
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={styles.fab}
+              onPress={() => setIsSelectionMode(true)}
+            >
+              <Route size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.fabText}>Armar Ruta</Text>
+            </Pressable>
+          )}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -521,5 +665,91 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '600',
     textAlign: 'center',
+  },
+  envioCardEntregado: {
+    opacity: 0.6,
+    backgroundColor: '#F8FAFC',
+  },
+  envioCardSelected: {
+    borderColor: '#4F46E5',
+    borderWidth: 2,
+    backgroundColor: '#EEF2FF',
+  },
+  selectionCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    marginRight: 10,
+    marginTop: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectionCircleActive: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  repartidorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    backgroundColor: '#EEF2FF',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  repartidorText: {
+    fontSize: 11,
+    color: '#4F46E5',
+    fontWeight: '700',
+  },
+  entregadoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 10,
+  },
+  entregadoBannerText: {
+    color: '#10B981',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    flexDirection: 'row',
+  },
+  selectionModeActions: {
+    flexDirection: 'row',
+  },
+  fab: {
+    backgroundColor: '#4F46E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  fabText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   }
 });

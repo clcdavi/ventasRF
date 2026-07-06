@@ -104,6 +104,14 @@ export const api = {
     });
   },
 
+  // Asignar o cambiar repartidor
+  cambiarRepartidor: (id: number, repartidor: string) => {
+    return fetchJson<{ ok: boolean }>(`/api/pedidos/${id}/repartidor`, {
+      method: 'PUT',
+      body: JSON.stringify({ repartidor }),
+    });
+  },
+
   // Eliminar un pedido (solo permitido si está Pendiente)
   eliminarPedido: (id: number) => {
     return fetchJson<{ ok: boolean }>(`/api/pedidos/${id}`, {

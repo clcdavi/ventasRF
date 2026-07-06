@@ -16,6 +16,7 @@ class PedidoSchema(Schema):
     fecha_pedido = fields.String(allow_none=True)
     estado = fields.String(allow_none=True)
     pagado = fields.Boolean(allow_none=True)
+    repartidor = fields.String(allow_none=True)
     items = fields.List(fields.Dict(), allow_none=True)
 
 class CambioEstadoSchema(Schema):

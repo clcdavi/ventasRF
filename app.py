@@ -272,15 +272,25 @@ def detalle_pedido(pedido_id):
 
 
 @app.route('/api/pedidos/<int:pedido_id>/pagado', methods=['PUT'])
-def cambiar_pagado(pedido_id):
+def actualizar_pagado(pedido_id):
     data = request.get_json()
-    if not data or 'pagado' not in data:
+    if 'pagado' not in data:
         return jsonify({'error': 'Falta el campo pagado.'}), 400
-    ok = models.update_pagado(pedido_id, bool(data['pagado']))
-    if not ok:
-        return jsonify({'error': 'Pedido no encontrado.'}), 404
-    socketio.emit('pedidos_actualizados', {'mensaje': 'Estado de pago actualizado'})
-    return jsonify({'ok': True, 'pagado': data['pagado']})
+    if models.update_pagado(pedido_id, data['pagado']):
+        socketio.emit('pedidos_actualizados', {'mensaje': 'Pago actualizado'})
+        return jsonify({'ok': True})
+    return jsonify({'error': 'Pedido no encontrado.'}), 404
+
+
+@app.route('/api/pedidos/<int:pedido_id>/repartidor', methods=['PUT'])
+def actualizar_repartidor(pedido_id):
+    data = request.get_json()
+    if 'repartidor' not in data:
+        return jsonify({'error': 'Falta el campo repartidor.'}), 400
+    if models.update_repartidor(pedido_id, data['repartidor']):
+        socketio.emit('pedidos_actualizados', {'mensaje': 'Repartidor actualizado'})
+        return jsonify({'ok': True})
+    return jsonify({'error': 'Pedido no encontrado.'}), 404
 
 
 @app.route('/api/pedidos/<int:pedido_id>/estado', methods=['PUT'])
@@ -348,9 +358,13 @@ def historial_contacto():
 @app.route('/api/pedidos/envios', methods=['GET'])
 def listar_pedidos_envios():
     fecha = request.args.get('fecha') or None
+    # Now returns all envios including Entregado so they remain visible
     pedidos = models.get_all_pedidos(fecha=fecha, tipo_entrega='envio')
-    pedidos_pendientes = [p for p in pedidos if p['estado'] != 'Entregado']
-    return jsonify(pedidos_pendientes)
+    
+    # Sort: pending first, Entregado last
+    pedidos_sorted = sorted(pedidos, key=lambda x: 1 if x['estado'] == 'Entregado' else 0)
+    
+    return jsonify(pedidos_sorted)
 
 
 # ── API de estadísticas y configuración ─────────────────────────────────────

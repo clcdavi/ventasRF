@@ -53,6 +53,7 @@ class Pedido(db.Model):
     estado = db.Column(db.Text, nullable=False, default='Pendiente')
     pagado = db.Column(db.Boolean, nullable=False, default=False)
     tipo_entrega = db.Column(db.Text, nullable=False, default='envio')
+    repartidor = db.Column(db.Text, nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     fecha_actualizacion = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

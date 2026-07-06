@@ -168,6 +168,7 @@ def create_pedido(data):
         estado='Pendiente',
         pagado=data.get('pagado', False),
         tipo_entrega=data.get('tipo_entrega', 'envio'),
+        repartidor=data.get('repartidor'),
         usuario_id=data.get('usuario_id')
     )
     
@@ -209,6 +210,8 @@ def update_pedido(pedido_id, data):
     p.horario_entrega = data.get('horario_entrega', '')
     p.notas = data.get('notas', '')
     p.tipo_entrega = data.get('tipo_entrega', 'envio')
+    if 'repartidor' in data:
+        p.repartidor = data['repartidor']
     p.monto_total = monto_total
     
     # Delete old items
@@ -242,6 +245,14 @@ def update_pagado(pedido_id, pagado):
     if not p:
         return False
     p.pagado = pagado
+    db.session.commit()
+    return True
+
+def update_repartidor(pedido_id, repartidor):
+    p = Pedido.query.get(pedido_id)
+    if not p:
+        return False
+    p.repartidor = repartidor
     db.session.commit()
     return True
 

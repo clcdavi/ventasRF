@@ -14,12 +14,12 @@ export interface Pedido {
   items?: PedidoItem[];
   medio_pago: string;
   monto_total: number;
-  tipo_entrega: 'envio' | 'retiro';
   horario_entrega?: string;
   notas?: string;
   estado: string;
   pagado: boolean;
-  created_at?: string;
+  tipo_entrega: string;
+  repartidor?: string;
 }
 
 export interface Stats {
