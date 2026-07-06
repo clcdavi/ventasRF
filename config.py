@@ -15,6 +15,5 @@ MEDIOS_PAGO = ['efectivo', 'transferencia']
 
 import os
 
-# ── Códigos secretos de registro para Staff ─────────────────────────────────
+# ── Código secreto de registro para Admin ────────────────────────────────────
 CODIGO_ADMIN = os.environ.get('CODIGO_ADMIN')
-CODIGO_REPARTIDOR = os.environ.get('CODIGO_REPARTIDOR')

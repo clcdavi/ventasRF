@@ -272,8 +272,6 @@ def delete_pedido(pedido_id):
     p = Pedido.query.get(pedido_id)
     if not p:
         return False, 'not_found'
-    if p.estado != 'Pendiente':
-        return False, 'not_pending'
     
     db.session.delete(p)
     db.session.commit()

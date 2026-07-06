@@ -11,7 +11,7 @@ from google.auth.transport import requests as google_requests
 from config import (ESTADOS, MEDIOS_PAGO,
                     PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA,
                     PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD,
-                    CODIGO_ADMIN, CODIGO_REPARTIDOR)
+                    CODIGO_ADMIN)
 import models
 import io
 from openpyxl import Workbook
@@ -540,8 +540,6 @@ def register_user():
         codigo_staff = str(codigo_staff).strip()
         if codigo_staff == CODIGO_ADMIN or codigo_staff.upper() == CODIGO_ADMIN:
             rol = 'admin'
-        elif codigo_staff == CODIGO_REPARTIDOR or codigo_staff.upper() == CODIGO_REPARTIDOR:
-            rol = 'repartidor'
         else:
             return jsonify({'error': 'Código de Staff inválido.'}), 400
 
@@ -686,8 +684,6 @@ def upgrade_role():
     nuevo_rol = None
     if codigo == CODIGO_ADMIN:
         nuevo_rol = 'admin'
-    elif codigo == CODIGO_REPARTIDOR:
-        nuevo_rol = 'repartidor'
     else:
         return jsonify({'error': 'Código de Staff inválido.'}), 400
 
