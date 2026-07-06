@@ -256,7 +256,19 @@ def listar_pedidos():
     fecha      = request.args.get('fecha') or None
     busqueda   = request.args.get('q') or None
     tipo_entrega = request.args.get('tipo_entrega') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega, usuario_id_filtro=usuario_id_filtro)
+    page = request.args.get('page', type=int)
+    limit = request.args.get('limit', default=30, type=int)
+
+    pedidos    = models.get_all_pedidos(
+        estado=estado, 
+        medio_pago=medio_pago, 
+        fecha=fecha, 
+        busqueda=busqueda, 
+        tipo_entrega=tipo_entrega, 
+        usuario_id_filtro=usuario_id_filtro,
+        page=page,
+        limit=limit
+    )
     return jsonify(pedidos)
 
 
@@ -450,6 +462,10 @@ def exportar_excel():
     font_body = Font(name="Segoe UI", size=11)
 
     for row_idx, p in enumerate(pedidos, start=2):
+        c_locro = sum(item['cantidad'] for item in p.get('items', []) if 'locro' in item.get('producto_nombre', '').lower())
+        c_batata = sum(item['cantidad'] for item in p.get('items', []) if 'batata' in item.get('producto_nombre', '').lower())
+        c_membrillo = sum(item['cantidad'] for item in p.get('items', []) if 'membrillo' in item.get('producto_nombre', '').lower())
+
         row_values = [
             p['id'],
             p['fecha_pedido'],
@@ -457,9 +473,9 @@ def exportar_excel():
             p['telefono'],
             p.get('email') or '',
             p['direccion'],
-            p['cantidad_locro'],
-            p['cantidad_pastelito_batata'],
-            p['cantidad_pastelito_membrillo'],
+            c_locro,
+            c_batata,
+            c_membrillo,
             p['medio_pago'],
             p['monto_total'],
             'Retiro iglesia' if p.get('tipo_entrega') == 'retiro' else 'Envío domicilio',

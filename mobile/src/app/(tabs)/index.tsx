@@ -279,7 +279,7 @@ export default function DashboardScreen() {
               <View style={styles.profileInputWrapper}>
                 <Phone size={16} color="#94A3B8" />
                 <TextInput
-                  style={styles.profileInput}
+                  style={styles.profileInput as any}
                   placeholder="Teléfono"
                   value={profileTelefono}
                   onChangeText={setProfileTelefono}
@@ -1602,7 +1602,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: '#1E293B',
-    outlineStyle: 'none',
   },
   profileSaveButton: {
     backgroundColor: '#F59E0B',

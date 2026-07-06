@@ -12,9 +12,9 @@ import {
   Platform
 } from 'react-native';
 import { useEffect } from 'react';
-import { io } from 'socket.io-client';
+
 import { API_BASE_URL } from '../../services/config';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { 
   Search, 
@@ -26,7 +26,7 @@ import {
   ChevronDown,
   Calendar
 } from 'lucide-react-native';
-import { api } from '../../services/api';
+import { api, PaginatedPedidos } from '../../services/api';
 import { Pedido } from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
@@ -45,30 +45,42 @@ export default function PedidosScreen() {
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [activeOrderForStatus, setActiveOrderForStatus] = useState<Pedido | null>(null);
 
-  const { data: pedidos, isLoading, refetch, isRefetching } = useQuery({
+  const { 
+    data: pedidosData, 
+    isLoading, 
+    refetch, 
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
     queryKey: ['pedidos', selectedEstado, selectedDate, searchQuery, isCustomer],
-    queryFn: () => isCustomer 
-      ? api.getMisPedidos()
-      : api.getPedidos({
+    queryFn: async ({ pageParam = 1 }) => {
+      if (isCustomer) {
+        const data = await api.getMisPedidos();
+        return { data, total: data.length, page: 1, pages: 1 } as PaginatedPedidos;
+      }
+      return api.getPedidos({
           estado: selectedEstado || undefined,
           fecha: selectedDate === 'all' ? undefined : selectedDate,
           q: searchQuery || undefined,
-        }),
+          page: pageParam,
+          limit: 15,
+      }) as Promise<PaginatedPedidos>;
+    },
+    getNextPageParam: (lastPage) => {
+      if (isCustomer || Array.isArray(lastPage)) return undefined;
+      const paginated = lastPage as PaginatedPedidos;
+      return paginated.page < paginated.pages ? paginated.page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  useEffect(() => {
-    const socket = io(API_BASE_URL);
-    socket.on('connect', () => {
-      console.log('Conectado al servidor WebSocket');
-    });
-    socket.on('pedidos_actualizados', (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
-    });
-    return () => {
-      socket.disconnect();
-    };
-  }, [queryClient]);
+  const pedidos = isCustomer 
+    ? ((pedidosData?.pages[0] as unknown as PaginatedPedidos)?.data) || []
+    : (pedidosData?.pages.flatMap(page => (page as PaginatedPedidos).data) || []);
+
+
 
   const { data: fechasPedidos = [] } = useQuery({
     queryKey: ['fechas-pedidos'],
@@ -331,6 +343,19 @@ export default function PedidosScreen() {
                 </Pressable>
               )}
             </View>
+          }
+          onEndReached={() => {
+            if (hasNextPage) {
+              fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color="#4F46E5" />
+              </View>
+            ) : null
           }
         />
       )}

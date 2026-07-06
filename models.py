@@ -1,4 +1,5 @@
 from datetime import datetime
+import bleach
 from sqlalchemy import func, or_, case, literal_column
 from db import db, Usuario, Producto, Pedido, PedidoItem
 from config import ESTADOS, MEDIOS_PAGO, PRECIO_LOCRO_UNITARIO, PRECIO_PASTELITO_DOCENA, PRECIO_PASTELITO_MEDIA_DOCENA, PRECIO_PASTELITO_UNIDAD
@@ -21,6 +22,18 @@ def _model_to_dict(obj):
     for column in obj.__table__.columns:
         val = getattr(obj, column.name)
         d[column.name] = _serialize(val)
+    return d
+
+def _pedido_to_dict(p):
+    if not p:
+        return None
+    d = _model_to_dict(p)
+    d['items'] = []
+    for item in p.items:
+        item_d = _model_to_dict(item)
+        if item.producto:
+            item_d['producto_nombre'] = item.producto.nombre
+        d['items'].append(item_d)
     return d
 
 def init_db():
@@ -78,31 +91,7 @@ def get_fechas_pedidos():
         .order_by(func.date(Pedido.fecha_pedido).desc())
     return [row.fecha for row in query.all()]
 
-def _attach_items_to_pedidos(pedidos_dicts):
-    if not pedidos_dicts:
-        return pedidos_dicts
-    
-    pedido_ids = [p['id'] for p in pedidos_dicts]
-    items = db.session.query(PedidoItem, Producto.nombre)\
-        .join(Producto, PedidoItem.producto_id == Producto.id)\
-        .filter(PedidoItem.pedido_id.in_(pedido_ids))\
-        .all()
-    
-    # group by pedido_id
-    items_by_pedido = {}
-    for item_model, prod_nombre in items:
-        item_dict = _model_to_dict(item_model)
-        item_dict['producto_nombre'] = prod_nombre
-        if item_dict['pedido_id'] not in items_by_pedido:
-            items_by_pedido[item_dict['pedido_id']] = []
-        items_by_pedido[item_dict['pedido_id']].append(item_dict)
-    
-    for p in pedidos_dicts:
-        p['items'] = items_by_pedido.get(p['id'], [])
-    
-    return pedidos_dicts
-
-def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None, usuario_id_filtro=None):
+def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None, usuario_id_filtro=None, page=None, limit=30):
     query = Pedido.query
     if estado:
         query = query.filter_by(estado=estado)
@@ -125,19 +114,25 @@ def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tip
         )
     
     query = query.order_by(Pedido.fecha_pedido.desc())
-    pedidos_dicts = [_model_to_dict(p) for p in query.all()]
-    return _attach_items_to_pedidos(pedidos_dicts)
+    
+    if page is not None and limit is not None:
+        pagination = query.paginate(page=page, per_page=limit, error_out=False)
+        return {
+            'data': [_pedido_to_dict(p) for p in pagination.items],
+            'total': pagination.total,
+            'page': pagination.page,
+            'pages': pagination.pages
+        }
+    else:
+        return [_pedido_to_dict(p) for p in query.all()]
 
 def get_pedido_by_id(pedido_id):
     p = Pedido.query.get(pedido_id)
-    if not p:
-        return None
-    return _attach_items_to_pedidos([_model_to_dict(p)])[0]
+    return _pedido_to_dict(p)
 
 def get_pedidos_by_usuario(usuario_id):
     pedidos = Pedido.query.filter_by(usuario_id=usuario_id).order_by(Pedido.fecha_pedido.desc()).all()
-    pedidos_dicts = [_model_to_dict(p) for p in pedidos]
-    return _attach_items_to_pedidos(pedidos_dicts)
+    return [_pedido_to_dict(p) for p in pedidos]
 
 def create_pedido(data):
     monto_total = 0.0
@@ -156,21 +151,18 @@ def create_pedido(data):
             })
 
     nuevo_pedido = Pedido(
-        nombre_cliente=data['nombre_cliente'],
-        telefono=data['telefono'],
-        email=data.get('email', ''),
-        direccion=data['direccion'],
-        cantidad_locro=data.get('cantidad_locro', 0),
-        cantidad_pastelito_batata=data.get('cantidad_pastelito_batata', 0),
-        cantidad_pastelito_membrillo=data.get('cantidad_pastelito_membrillo', 0),
-        medio_pago=data['medio_pago'],
+        nombre_cliente=bleach.clean(data['nombre_cliente']),
+        telefono=bleach.clean(data['telefono']),
+        email=bleach.clean(data.get('email', '')),
+        direccion=bleach.clean(data['direccion']),
+        medio_pago=bleach.clean(data['medio_pago']),
         monto_total=monto_total,
-        horario_entrega=data.get('horario_entrega', ''),
-        notas=data.get('notas', ''),
+        horario_entrega=bleach.clean(data.get('horario_entrega', '')),
+        notas=bleach.clean(data.get('notas', '')),
         estado='Pendiente',
         pagado=data.get('pagado', False),
-        tipo_entrega=data.get('tipo_entrega', 'envio'),
-        repartidor=data.get('repartidor'),
+        tipo_entrega=bleach.clean(data.get('tipo_entrega', 'envio')),
+        repartidor=bleach.clean(data.get('repartidor', '')) if data.get('repartidor') else None,
         usuario_id=data.get('usuario_id')
     )
     
@@ -211,19 +203,16 @@ def update_pedido(pedido_id, data):
                 'precio_unitario': precio_unitario
             })
         
-    p.nombre_cliente = data['nombre_cliente']
-    p.telefono = data['telefono']
-    p.email = data.get('email', '')
-    p.direccion = data['direccion']
-    p.cantidad_locro = data.get('cantidad_locro', 0)
-    p.cantidad_pastelito_batata = data.get('cantidad_pastelito_batata', 0)
-    p.cantidad_pastelito_membrillo = data.get('cantidad_pastelito_membrillo', 0)
-    p.medio_pago = data['medio_pago']
-    p.horario_entrega = data.get('horario_entrega', '')
-    p.notas = data.get('notas', '')
-    p.tipo_entrega = data.get('tipo_entrega', 'envio')
+    p.nombre_cliente = bleach.clean(data.get('nombre_cliente', p.nombre_cliente))
+    p.telefono = bleach.clean(data.get('telefono', p.telefono))
+    p.email = bleach.clean(data.get('email', p.email or ''))
+    p.direccion = bleach.clean(data.get('direccion', p.direccion))
+    p.medio_pago = bleach.clean(data.get('medio_pago', p.medio_pago))
+    p.horario_entrega = bleach.clean(data.get('horario_entrega', p.horario_entrega or ''))
+    p.notas = bleach.clean(data.get('notas', p.notas or ''))
+    p.tipo_entrega = bleach.clean(data.get('tipo_entrega', p.tipo_entrega))
     if 'repartidor' in data:
-        p.repartidor = data['repartidor']
+        p.repartidor = bleach.clean(data['repartidor'])
     p.monto_total = monto_total
     
     # Delete old items

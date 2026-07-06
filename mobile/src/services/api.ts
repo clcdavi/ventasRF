@@ -36,24 +36,37 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T>
   }
 }
 
+export interface PaginatedPedidos {
+  data: Pedido[];
+  total: number;
+  page: number;
+  pages: number;
+}
+
 export const api = {
-  // Obtener listado de pedidos con filtros
+  // Obtener listado de pedidos con filtros y paginación
   getPedidos: (filters?: {
     estado?: string;
     medio_pago?: string;
     fecha?: string;
     q?: string;
     tipo_entrega?: string;
+    page?: number;
+    limit?: number;
   }) => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value);
+          params.append(key, value.toString());
         }
       });
     }
     const query = params.toString();
+    // Si enviamos page, el backend retorna PaginatedPedidos
+    if (filters?.page !== undefined) {
+      return fetchJson<PaginatedPedidos>(`/api/pedidos${query ? `?${query}` : ''}`);
+    }
     return fetchJson<Pedido[]>(`/api/pedidos${query ? `?${query}` : ''}`);
   },
 

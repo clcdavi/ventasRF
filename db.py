@@ -45,9 +45,6 @@ class Pedido(db.Model):
     telefono = db.Column(db.Text, nullable=False)
     email = db.Column(db.Text)
     direccion = db.Column(db.Text, nullable=False)
-    cantidad_locro = db.Column(db.Integer, nullable=False, default=0)
-    cantidad_pastelito_batata = db.Column(db.Integer, nullable=False, default=0)
-    cantidad_pastelito_membrillo = db.Column(db.Integer, nullable=False, default=0)
     medio_pago = db.Column(db.Text, nullable=False)
     monto_total = db.Column(db.Float, nullable=False)
     horario_entrega = db.Column(db.Text)
@@ -58,6 +55,10 @@ class Pedido(db.Model):
     repartidor = db.Column(db.Text, nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     fecha_actualizacion = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones ORM
+    items = db.relationship('PedidoItem', backref='pedido', lazy=True, cascade='all, delete-orphan')
+    usuario = db.relationship('Usuario', lazy=True)
 
 class PedidoItem(db.Model):
     __tablename__ = 'pedido_items'
@@ -66,3 +67,6 @@ class PedidoItem(db.Model):
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
+    
+    # Relaciones ORM
+    producto = db.relationship('Producto', lazy=True)

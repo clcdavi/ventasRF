@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Stack } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar, View, Text, useWindowDimensions, StyleSheet, Platform, Pressable } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Maximize, Minimize } from 'lucide-react-native';
 import { AuthProvider } from '../stores/auth';
+import { SocketProvider } from '../providers/SocketProvider';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -15,9 +19,14 @@ const queryClient = new QueryClient({
     queries: {
       retry: 2,
       staleTime: 1000 * 60 * 2, // 2 minutos
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
       refetchOnWindowFocus: true,
     },
   },
+});
+
+const asyncStoragePersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
 });
 
 export default function RootLayout() {
@@ -102,9 +111,10 @@ export default function RootLayout() {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: asyncStoragePersister }}>
       <AuthProvider>
-        <SafeAreaProvider>
+        <SocketProvider>
+          <SafeAreaProvider>
           <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
           {isLargeScreen ? (
             isExpandedView ? (
@@ -160,8 +170,9 @@ export default function RootLayout() {
             appContent
           )}
         </SafeAreaProvider>
+        </SocketProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
