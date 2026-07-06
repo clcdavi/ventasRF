@@ -263,7 +263,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/pedidos/nuevo')}
               >
                 <Image source={require('../../../assets/images/pastelitos.jpg')} style={styles.carouselImagePlaceholder} />
-                <Text style={styles.carouselTitle}>Docena Surtida</Text>
+                <Text style={styles.carouselTitle}>Pastelitos por docena</Text>
               </Pressable>
             </ScrollView>
           </View>
