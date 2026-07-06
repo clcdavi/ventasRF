@@ -14,26 +14,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { Pedido } from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Phone, 
-  MessageCircle, 
-  MapPin, 
-  CheckCircle, 
-  Clock, 
-  Calendar,
-  Flame,
-  ShoppingBag,
-  Info,
-  User,
-  Route,
-  Navigation
-} from 'lucide-react-native';
+import { CheckCircle, Clock, MapPin, User, MessageCircle, Phone, Flame, ShoppingBag, Info, Navigation, Route, Calendar } from 'lucide-react-native';
+import { CustomPrompt } from '../../components/CustomPrompt';
 import { formatDateToLabel } from '../../utils/date';
 
 export default function EnviosScreen() {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [promptConfig, setPromptConfig] = useState<{
+    visible: boolean;
+    pedido: Pedido | null;
+  }>({
+    visible: false,
+    pedido: null
+  });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // Obtener pedidos de tipo 'envio'
@@ -120,23 +115,17 @@ export default function EnviosScreen() {
   };
 
   const handleAssignRepartidor = (pedido: Pedido) => {
-    Alert.prompt(
-      'Asignar Repartidor',
-      'Ingresa el nombre del repartidor para este pedido:',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Asignar', 
-          onPress: (text?: string) => {
-            if (text && text.trim().length > 0) {
-              assignRepartidorMutation.mutate({ id: pedido.id, repartidor: text.trim() });
-            }
-          }
-        }
-      ],
-      'plain-text',
-      pedido.repartidor || ''
-    );
+    setPromptConfig({
+      visible: true,
+      pedido
+    });
+  };
+
+  const submitRepartidor = (text: string) => {
+    if (text && text.trim().length > 0 && promptConfig.pedido) {
+      assignRepartidorMutation.mutate({ id: promptConfig.pedido.id, repartidor: text.trim() });
+    }
+    setPromptConfig({ visible: false, pedido: null });
   };
 
   const toggleSelection = (id: number) => {
@@ -339,6 +328,15 @@ export default function EnviosScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <CustomPrompt
+        visible={promptConfig.visible}
+        title="Asignar Repartidor"
+        message="Ingresa el nombre del repartidor para este pedido:"
+        defaultValue={promptConfig.pedido?.repartidor || ''}
+        onCancel={() => setPromptConfig({ visible: false, pedido: null })}
+        onSubmit={submitRepartidor}
+      />
+      
       {/* Selector de Evento */}
       <View style={styles.selectorContainer}>
         {datesList.map((d) => (
