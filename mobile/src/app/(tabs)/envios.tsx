@@ -364,6 +364,48 @@ export default function EnviosScreen() {
         ))}
       </View>
 
+      {/* Acciones de Ruta (Top) */}
+      {!isLoading && (envios?.length || 0) > 0 && (
+        <View style={styles.routeTopContainer}>
+          {isSelectionMode ? (
+            <View style={styles.selectionModeActionsTop}>
+              <Pressable
+                style={({ pressed }) => [styles.routeTopButton, { backgroundColor: '#94A3B8' }, pressed && styles.buttonPressed]}
+                onPress={() => {
+                  setIsSelectionMode(false);
+                  setSelectedIds([]);
+                }}
+              >
+                <Text style={styles.routeTopButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.routeTopButton, 
+                  { backgroundColor: '#4F46E5', marginLeft: 10 },
+                  selectedIds.length === 0 && { opacity: 0.5 },
+                  pressed && styles.buttonPressed
+                ]}
+                onPress={generateRoute}
+                disabled={selectedIds.length === 0}
+              >
+                <Navigation size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.routeTopButtonText}>
+                  Abrir Maps ({selectedIds.length})
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [styles.routeTopButton, { backgroundColor: '#4F46E5' }, pressed && styles.buttonPressed]}
+              onPress={() => setIsSelectionMode(true)}
+            >
+              <Route size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={styles.routeTopButtonText}>Seleccionar Pedidos para Armar Ruta</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
       {/* Listado */}
       {isLoading ? (
         <View style={styles.centerContainer}>
@@ -386,43 +428,6 @@ export default function EnviosScreen() {
             </View>
           }
         />
-      )}
-
-      {/* Floating Action Button (Ruta) */}
-      {!isLoading && (envios?.length || 0) > 0 && (
-        <View style={styles.fabContainer}>
-          {isSelectionMode ? (
-            <View style={styles.selectionModeActions}>
-              <Pressable
-                style={[styles.fab, { backgroundColor: '#94A3B8', marginRight: 10 }]}
-                onPress={() => {
-                  setIsSelectionMode(false);
-                  setSelectedIds([]);
-                }}
-              >
-                <Text style={styles.fabText}>Cancelar</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.fab, selectedIds.length === 0 && { opacity: 0.5 }]}
-                onPress={generateRoute}
-                disabled={selectedIds.length === 0}
-              >
-                <Navigation size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                <Text style={styles.fabText}>
-                  Abrir Maps ({selectedIds.length})
-                </Text>
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              style={styles.fab}
-              onPress={() => setIsSelectionMode(true)}
-            >
-              <Route size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.fabText}>Armar Ruta</Text>
-            </Pressable>
-          )}
-        </View>
       )}
     </SafeAreaView>
   );
@@ -717,35 +722,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    flexDirection: 'row',
+  routeTopContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
   },
-  selectionModeActions: {
+  selectionModeActionsTop: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  fab: {
-    backgroundColor: '#4F46E5',
+  routeTopButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#4F46E5',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    borderRadius: 12,
   },
-  fabText: {
+  routeTopButtonText: {
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
