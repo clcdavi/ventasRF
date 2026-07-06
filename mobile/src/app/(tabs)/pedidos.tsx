@@ -355,7 +355,7 @@ export default function PedidosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EBF0F5',
+    backgroundColor: '#F8FAFC',
   },
   searchOuter: {
     paddingHorizontal: 20,
@@ -364,12 +364,12 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E0E6ED',
+    backgroundColor: '#F1F5F9',
     borderRadius: 20,
     paddingHorizontal: 14,
     height: 48,
     borderWidth: 1,
-    borderColor: '#D1D9E6',
+    borderColor: '#E2E8F0',
   },
   searchIcon: {
     marginRight: 10,
@@ -428,9 +428,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: '#E0E6ED',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#D1D9E6',
+    borderColor: '#E2E8F0',
   },
   filterChipActive: {
     backgroundColor: '#FFFFFF',
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     paddingBottom: 95,
   },
   cardOuter: {
-    backgroundColor: '#E6ECF5',
+    backgroundColor: '#F1F5F9',
     borderRadius: 24,
     padding: 6,
     marginBottom: 16,
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: '#EBF0F5',
+    backgroundColor: '#F1F5F9',
     marginVertical: 12,
   },
   cardBody: {

@@ -129,11 +129,11 @@ export default function PedidoDetailScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Pendiente': return { bg: '#fdebec', text: '#9f2f2d' }; // Pale Red
-      case 'En preparación': return { bg: '#e1f3fe', text: '#026aa2' }; // Pale Blue
-      case 'En envío': return { bg: '#fbf3db', text: '#956400' }; // Pale Yellow
-      case 'Entregado': return { bg: '#edf3ec', text: '#346538' }; // Pale Green
-      default: return { bg: '#f1f1ef', text: '#787774' };
+      case 'Pendiente': return { bg: '#FFF5F5', text: '#EF4444' };
+      case 'En preparación': return { bg: '#EFF6FF', text: '#3B82F6' };
+      case 'En envío': return { bg: '#FFFBEB', text: '#D97706' };
+      case 'Entregado': return { bg: '#ECFDF5', text: '#10B981' };
+      default: return { bg: '#F8FAFC', text: '#64748B' };
     }
   };
 
@@ -194,7 +194,7 @@ export default function PedidoDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="small" color="#111111" />
+        <ActivityIndicator size="small" color="#4F46E5" />
         <Text style={styles.infoText}>Cargando detalles del pedido...</Text>
       </View>
     );
@@ -223,7 +223,7 @@ export default function PedidoDetailScreen() {
           <View style={styles.headerInfo}>
             <Text style={styles.orderId}>Pedido #{pedido.id}</Text>
             <View style={styles.dateRow}>
-              <Calendar size={12} color="#787774" style={{ marginRight: 6 }} />
+              <Calendar size={12} color="#64748B" style={{ marginRight: 6 }} />
               <Text style={styles.dateText}>Para el: {pedido.fecha_pedido}</Text>
             </View>
           </View>
@@ -235,7 +235,7 @@ export default function PedidoDetailScreen() {
         {/* Sección del Cliente */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <User size={14} color="#111111" style={{ marginRight: 8 }} />
+            <User size={14} color="#4F46E5" style={{ marginRight: 8 }} />
             <Text style={styles.sectionTitle}>Datos del Cliente</Text>
           </View>
           
@@ -243,11 +243,11 @@ export default function PedidoDetailScreen() {
           
           <View style={styles.contactButtonsRow}>
             <Pressable onPress={handleCall} style={styles.contactLinkButton}>
-              <Phone size={12} color="#111111" style={{ marginRight: 6 }} />
+              <Phone size={12} color="#0F172A" style={{ marginRight: 6 }} />
               <Text style={styles.contactLinkText}>{pedido.telefono}</Text>
             </Pressable>
             <Pressable onPress={handleWhatsApp} style={styles.contactWhatsappButton}>
-              <MessageCircle size={12} color="#346538" style={{ marginRight: 6 }} />
+              <MessageCircle size={12} color="#059669" style={{ marginRight: 6 }} />
               <Text style={styles.contactWhatsappText}>WhatsApp</Text>
             </Pressable>
           </View>
@@ -257,7 +257,7 @@ export default function PedidoDetailScreen() {
           <View style={styles.divider} />
           
           <View style={styles.addressContainer}>
-            <MapPin size={14} color="#787774" style={{ marginRight: 8, marginTop: 2 }} />
+            <MapPin size={14} color="#64748B" style={{ marginRight: 8, marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.addressLabel}>{pedido.tipo_entrega === 'envio' ? 'Dirección de Envío' : 'Retiro en Iglesia'}</Text>
               <Text style={styles.addressValue}>{pedido.direccion}</Text>
@@ -273,7 +273,7 @@ export default function PedidoDetailScreen() {
         {/* Detalle de Productos */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <ShoppingBag size={14} color="#111111" style={{ marginRight: 8 }} />
+            <ShoppingBag size={14} color="#4F46E5" style={{ marginRight: 8 }} />
             <Text style={styles.sectionTitle}>Detalle del Pedido</Text>
           </View>
 
@@ -290,7 +290,7 @@ export default function PedidoDetailScreen() {
         {/* Detalles del Pago */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionTitleRow}>
-            <DollarSign size={14} color="#111111" style={{ marginRight: 8 }} />
+            <DollarSign size={14} color="#4F46E5" style={{ marginRight: 8 }} />
             <Text style={styles.sectionTitle}>Pago y Entrega</Text>
           </View>
 
@@ -317,7 +317,7 @@ export default function PedidoDetailScreen() {
             <View style={[styles.paymentInfoRow, { marginTop: 10 }]}>
               <Text style={styles.paymentLabel}>Horario de entrega</Text>
               <View style={styles.timeBadge}>
-                <Clock size={12} color="#956400" style={{ marginRight: 4 }} />
+                <Clock size={12} color="#D97706" style={{ marginRight: 4 }} />
                 <Text style={styles.timeBadgeText}>{pedido.horario_entrega}</Text>
               </View>
             </View>
@@ -325,7 +325,7 @@ export default function PedidoDetailScreen() {
 
           {pedido.notas ? (
             <View style={styles.notesBox}>
-              <FileText size={14} color="#787774" style={{ marginRight: 6, marginTop: 2 }} />
+              <FileText size={14} color="#64748B" style={{ marginRight: 6, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.notesTitle}>Notas de preparación/envío</Text>
                 <Text style={styles.notesText}>{pedido.notas}</Text>
@@ -371,7 +371,7 @@ export default function PedidoDetailScreen() {
                 onPress={() => togglePaidMutation.mutate(!pedido.pagado)}
                 style={[styles.bigActionButton, pedido.pagado ? styles.btnUndoPayment : styles.btnConfirmPayment]}
               >
-                <CheckCircle size={16} color={pedido.pagado ? '#9f2f2d' : '#ffffff'} style={{ marginRight: 8 }} strokeWidth={2.5} />
+                <CheckCircle size={16} color={pedido.pagado ? '#DC2626' : '#ffffff'} style={{ marginRight: 8 }} strokeWidth={2.5} />
                 <Text style={[styles.bigActionButtonText, pedido.pagado ? styles.btnUndoPaymentText : styles.btnConfirmPaymentText]}>
                   {pedido.pagado ? 'Marcar como No Cobrado' : 'Marcar como Cobrado'}
                 </Text>
@@ -388,7 +388,7 @@ export default function PedidoDetailScreen() {
                   })}
                   style={styles.editButton}
                 >
-                  <Edit size={14} color="#111111" style={{ marginRight: 6 }} />
+                  <Edit size={14} color="#0F172A" style={{ marginRight: 6 }} />
                   <Text style={styles.editButtonText}>Editar Pedido</Text>
                 </Pressable>
 
@@ -396,7 +396,7 @@ export default function PedidoDetailScreen() {
                   onPress={handleDelete}
                   style={styles.deleteButton}
                 >
-                  <Trash2 size={14} color="#9f2f2d" style={{ marginRight: 6 }} />
+                  <Trash2 size={14} color="#DC2626" style={{ marginRight: 6 }} />
                   <Text style={styles.deleteButtonText}>Eliminar Pedido</Text>
                 </Pressable>
               </View>
@@ -412,7 +412,7 @@ export default function PedidoDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fbfbfa',
+    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -423,45 +423,47 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
-    backgroundColor: '#fbfbfa',
+    backgroundColor: '#F8FAFC',
   },
   infoText: {
     marginTop: 8,
-    color: '#787774',
+    color: '#64748B',
     fontSize: 12,
     fontWeight: '500',
-    fontFamily: 'System',
   },
   errorText: {
     fontSize: 13,
-    color: '#9f2f2d',
+    color: '#EF4444',
     fontWeight: '500',
     textAlign: 'center',
     marginBottom: 20,
-    fontFamily: 'System',
   },
   backButton: {
-    backgroundColor: '#111111',
-    borderRadius: 6,
+    backgroundColor: '#4F46E5',
+    borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
   },
   backButtonText: {
     color: '#ffffff',
     fontWeight: '600',
-    fontFamily: 'System',
     fontSize: 13,
   },
   headerCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     marginTop: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   headerInfo: {
     flex: 1,
@@ -469,8 +471,7 @@ const styles = StyleSheet.create({
   orderId: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111111',
-    fontFamily: 'System',
+    color: '#0F172A',
   },
   dateRow: {
     flexDirection: 'row',
@@ -479,27 +480,30 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 11,
-    color: '#787774',
+    color: '#64748B',
     fontWeight: '500',
-    fontFamily: 'System',
   },
   statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
   statusText: {
     fontSize: 11,
     fontWeight: '700',
-    fontFamily: 'System',
   },
   sectionCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   sectionTitleRow: {
     flexDirection: 'row',
@@ -509,16 +513,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#787774',
+    color: '#64748B',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'System',
   },
   detailName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111111',
-    fontFamily: 'System',
+    color: '#0F172A',
   },
   contactButtonsRow: {
     flexDirection: 'row',
@@ -529,42 +531,39 @@ const styles = StyleSheet.create({
   contactLinkButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   contactLinkText: {
     fontSize: 12,
-    color: '#111111',
+    color: '#0F172A',
     fontWeight: '600',
-    fontFamily: 'System',
   },
   contactWhatsappButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#edf3ec',
+    backgroundColor: '#ECFDF5',
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   contactWhatsappText: {
     fontSize: 12,
-    color: '#346538',
+    color: '#059669',
     fontWeight: '600',
-    fontFamily: 'System',
   },
   detailEmail: {
     fontSize: 12,
-    color: '#787774',
+    color: '#64748B',
     marginTop: 6,
-    fontFamily: 'System',
   },
   divider: {
     height: 1,
-    backgroundColor: '#eaeaea',
+    backgroundColor: '#F1F5F9',
     marginVertical: 12,
   },
   addressContainer: {
@@ -573,45 +572,40 @@ const styles = StyleSheet.create({
   },
   addressLabel: {
     fontSize: 10,
-    color: '#787774',
+    color: '#64748B',
     fontWeight: '500',
-    fontFamily: 'System',
   },
   addressValue: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#2f3437',
+    color: '#334155',
     marginTop: 2,
-    fontFamily: 'System',
   },
   mapsLink: {
     marginTop: 6,
   },
   mapsLinkText: {
     fontSize: 11,
-    color: '#026aa2',
+    color: '#4F46E5',
     fontWeight: '700',
-    fontFamily: 'System',
   },
   productRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f1ef',
+    borderBottomColor: '#F1F5F9',
   },
   productQty: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#111111',
+    color: '#0F172A',
     width: 26,
-    fontFamily: 'System',
   },
   productName: {
     fontSize: 12,
-    color: '#2f3437',
+    color: '#334155',
     fontWeight: '600',
-    fontFamily: 'System',
   },
   paymentInfoRow: {
     flexDirection: 'row',
@@ -621,105 +615,101 @@ const styles = StyleSheet.create({
   },
   paymentLabel: {
     fontSize: 12,
-    color: '#787774',
+    color: '#64748B',
     fontWeight: '500',
-    fontFamily: 'System',
   },
   paymentValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#2f3437',
-    fontFamily: 'System',
+    color: '#334155',
   },
   paymentTotalValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#111111',
-    fontFamily: 'System',
+    color: '#0F172A',
   },
   paymentStatusBadge: {
     paddingVertical: 4,
     paddingHorizontal: 8,
-    borderRadius: 4,
+    borderRadius: 8,
   },
   badgePaid: {
-    backgroundColor: '#edf3ec',
+    backgroundColor: '#ECFDF5',
   },
   badgeUnpaid: {
-    backgroundColor: '#fdebec',
+    backgroundColor: '#FEF2F2',
   },
   paymentStatusBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    fontFamily: 'System',
   },
   badgeTextPaid: {
-    color: '#346538',
+    color: '#059669',
   },
   badgeTextUnpaid: {
-    color: '#9f2f2d',
+    color: '#DC2626',
   },
   timeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fbf3db',
+    backgroundColor: '#FFFBEB',
     paddingVertical: 4,
     paddingHorizontal: 8,
-    borderRadius: 4,
+    borderRadius: 8,
   },
   timeBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#956400',
-    fontFamily: 'System',
+    color: '#D97706',
   },
   notesBox: {
     flexDirection: 'row',
-    backgroundColor: '#f9f9f8',
-    borderRadius: 6,
-    padding: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
   },
   notesTitle: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#787774',
-    fontFamily: 'System',
+    color: '#64748B',
     textTransform: 'uppercase',
   },
   notesText: {
     fontSize: 11,
-    color: '#2f3437',
+    color: '#334155',
     marginTop: 2,
-    lineHeight: 14,
-    fontFamily: 'System',
+    lineHeight: 16,
   },
   sectionHeader: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#787774',
+    color: '#64748B',
     marginTop: 20,
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     paddingLeft: 4,
-    fontFamily: 'System',
   },
   actionsCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   actionCardTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#2f3437',
+    color: '#334155',
     marginBottom: 10,
-    fontFamily: 'System',
   },
   statusButtonsGrid: {
     flexDirection: 'row',
@@ -730,50 +720,48 @@ const styles = StyleSheet.create({
   statusSelectButton: {
     flex: 1,
     minWidth: '45%',
-    height: 34,
-    borderRadius: 6,
+    height: 36,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
   },
   statusSelectButtonActive: {
-    backgroundColor: '#111111',
-    borderColor: '#111111',
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
   },
   statusSelectButtonText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#787774',
-    fontFamily: 'System',
+    color: '#64748B',
   },
   statusSelectButtonTextActive: {
     color: '#ffffff',
   },
   bigActionButton: {
-    height: 38,
-    borderRadius: 6,
+    height: 40,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
   btnConfirmPayment: {
-    backgroundColor: '#111111',
+    backgroundColor: '#4F46E5',
   },
   btnUndoPayment: {
-    backgroundColor: '#fdebec',
+    backgroundColor: '#FEF2F2',
   },
   bigActionButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'System',
   },
   btnConfirmPaymentText: {
     color: '#ffffff',
   },
   btnUndoPaymentText: {
-    color: '#9f2f2d',
+    color: '#DC2626',
   },
   dangerZoneRow: {
     flexDirection: 'row',
@@ -782,34 +770,37 @@ const styles = StyleSheet.create({
   },
   editButton: {
     flex: 1,
-    height: 38,
-    borderRadius: 6,
+    height: 40,
+    borderRadius: 10,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   editButtonText: {
-    color: '#111111',
+    color: '#0F172A',
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'System',
   },
   deleteButton: {
     flex: 1,
-    height: 38,
-    borderRadius: 6,
-    backgroundColor: '#fdebec',
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#FEF2F2',
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
   deleteButtonText: {
-    color: '#9f2f2d',
+    color: '#DC2626',
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'System',
   }
 });

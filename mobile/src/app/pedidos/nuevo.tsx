@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Minus, Plus, Check, Save } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CustomAlert } from '../../components/CustomAlert';
 import { useAuth } from '../../stores/auth';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -199,7 +200,8 @@ export default function NuevoPedidoScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <LinearGradient colors={['#F8FAFC', '#E0E7FF']} style={styles.gradient}>
+<SafeAreaView style={styles.container} edges={['bottom']}>
       <CustomAlert 
         visible={alertConfig.visible}
         title={alertConfig.title}
@@ -446,7 +448,7 @@ export default function NuevoPedidoScreen() {
           )}
         </Pressable>
       </View>
-    </SafeAreaView>
+    </SafeAreaView></LinearGradient>
   );
 }
 
@@ -454,17 +456,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 110 },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 16,
     padding: 16,
     marginTop: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 4,
   },
   cardTitle: {
     fontSize: 12,
@@ -494,7 +496,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
     color: '#0F172A',
-    fontFamily: 'System',
+    fontFamily: 'Inter',
   },
   inputDisabled: {
     backgroundColor: '#F1F5F9',
@@ -552,6 +554,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   qtyBtn: {
+    // keep same styling
     width: 32,
     height: 32,
     justifyContent: 'center',
@@ -637,6 +640,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
+  },
+  gradient: {
+    flex: 1,
   },
   totalBlock: { flex: 1 },
   footerTotalLabel: {
