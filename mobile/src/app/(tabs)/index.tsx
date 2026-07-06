@@ -234,14 +234,20 @@ export default function DashboardScreen() {
           {/* Carrusel de Promociones */}
           <View style={styles.carouselContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContent}>
-              <View style={styles.carouselCard}>
+              <Pressable 
+                style={({ pressed }) => [styles.carouselCard, pressed && { opacity: 0.8 }]}
+                onPress={() => router.push('/pedidos/nuevo')}
+              >
                 <Image source={require('../../../assets/images/locro.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Porción de Locro</Text>
-              </View>
-              <View style={styles.carouselCard}>
+              </Pressable>
+              <Pressable 
+                style={({ pressed }) => [styles.carouselCard, pressed && { opacity: 0.8 }]}
+                onPress={() => router.push('/pedidos/nuevo')}
+              >
                 <Image source={require('../../../assets/images/pastelitos.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Docena Surtida</Text>
-              </View>
+              </Pressable>
             </ScrollView>
           </View>
 
