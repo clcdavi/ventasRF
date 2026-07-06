@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, RefreshControl, ActivityIndicator, Pressable, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, ActivityIndicator, Pressable, Platform, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
+import { storage } from '../../utils/storage';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -13,7 +17,8 @@ import {
   Truck,
   RotateCcw,
   Clock,
-  Info
+  Info,
+  Download
 } from 'lucide-react-native';
 import { Picker } from '@react-native-picker/picker';
 import { formatDateToLabel } from '../../utils/date';
@@ -66,6 +71,43 @@ export default function StatsScreen() {
     ? Math.round((stats.recaudacion_cobrada / stats.recaudacion_total) * 100) 
     : 0;
 
+  const handleExport = async () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const token = await storage.getItem('authToken');
+      const dateParam = selectedDate === 'all' ? '' : `?fecha=${selectedDate}`;
+      const url = `http://137.131.245.249:5000/api/export${dateParam}`;
+
+      if (Platform.OS === 'web') {
+        window.open(url, '_blank');
+        return;
+      }
+
+      // @ts-ignore
+      const fileUri = `${FileSystem.documentDirectory}ventas_${selectedDate}.xlsx`;
+      const downloadResumed = FileSystem.createDownloadResumable(
+        url,
+        fileUri,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const result = await downloadResumed.downloadAsync();
+      if (result?.uri) {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(result.uri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: 'Exportar Ventas'
+          });
+        } else {
+          Alert.alert('Éxito', `Archivo guardado en: ${result.uri}`);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert('Error', 'No se pudo exportar el archivo.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Selector de Evento */}
@@ -85,6 +127,20 @@ export default function StatsScreen() {
           </View>
         </View>
       )}
+
+      {/* Exportar a Excel Boton */}
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <Pressable 
+          onPress={handleExport}
+          style={({ pressed }) => [
+            styles.exportButton,
+            pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }
+          ]}
+        >
+          <Download color="#fff" size={18} style={{ marginRight: 8 }} />
+          <Text style={styles.exportButtonText}>Exportar a Excel</Text>
+        </Pressable>
+      </View>
 
       {isLoading ? (
         <View style={styles.centerContainer}>
@@ -492,5 +548,30 @@ const styles = StyleSheet.create({
   buttonPressed: {
     opacity: 0.8,
     transform: [{ scale: 0.95 }],
+  },
+  exportButton: {
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  exportButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   }
 });

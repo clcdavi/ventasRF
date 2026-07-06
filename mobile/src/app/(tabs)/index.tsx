@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput, Modal } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { 
@@ -24,7 +25,7 @@ import { formatDateToLabel } from '../../utils/date';
 export default function DashboardScreen() {
   const { user, signOut, updateUser } = useAuth();
   const [viewAsCustomer, setViewAsCustomer] = useState(false);
-  const isCustomer = user?.rol === 'customer' || user?.rol === 'user' || viewAsCustomer;
+  const isCustomer = user?.rol === 'user' || viewAsCustomer;
   const [selectedDate, setSelectedDate] = useState<string>('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
@@ -101,7 +102,7 @@ export default function DashboardScreen() {
 
   if (isCustomer) {
     const activePedido = misPedidos?.find(p => p.estado !== 'Entregado');
-    const isRealCustomer = user?.rol === 'customer' || user?.rol === 'user';
+    const isRealCustomer = user?.rol === 'user';
     const userInitial = user?.nombre?.charAt(0)?.toUpperCase() ?? '?';
     const firstName = user?.nombre?.split(' ')[0] ?? 'Cliente';
     return (
@@ -119,7 +120,7 @@ export default function DashboardScreen() {
           </View>
           {/* Acciones */}
           <View style={styles.headerActions}>
-            {(user?.rol === 'admin' || user?.rol === 'repartidor') && (
+            {user?.rol === 'admin' && (
               <Pressable
                 onPress={() => setViewAsCustomer(false)}
                 style={({ pressed }) => [
@@ -131,7 +132,10 @@ export default function DashboardScreen() {
               </Pressable>
             )}
             <Pressable
-              onPress={() => refetchPedidos()}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                refetchPedidos();
+              }}
               style={({ pressed }) => [
                 styles.refreshButton,
                 pressed && styles.buttonPressed
@@ -140,7 +144,10 @@ export default function DashboardScreen() {
               <RefreshCw size={18} color="#4A5568" />
             </Pressable>
             <Pressable
-              onPress={() => signOut()}
+              onPress={() => {
+                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                signOut();
+              }}
               style={({ pressed }) => [
                 styles.refreshButton,
                 pressed && styles.buttonPressed
@@ -1092,7 +1099,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1E293B',
     textAlign: 'center',
-    fontFamily: 'System',
+    fontFamily: 'Inter_600SemiBold',
   },
   customerWelcomeDesc: {
     fontSize: 13,
@@ -1100,7 +1107,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 18,
-    fontFamily: 'System',
+    fontFamily: 'Inter_600SemiBold',
   },
   customerActionButton: {
     backgroundColor: '#4F46E5',
@@ -1116,7 +1123,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
-    fontFamily: 'System',
+    fontFamily: 'Inter_600SemiBold',
   },
   activeOrderCard: {
     backgroundColor: '#FFFFFF',

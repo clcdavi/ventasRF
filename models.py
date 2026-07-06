@@ -102,7 +102,7 @@ def _attach_items_to_pedidos(pedidos_dicts):
     
     return pedidos_dicts
 
-def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None):
+def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None, usuario_id_filtro=None):
     query = Pedido.query
     if estado:
         query = query.filter_by(estado=estado)
@@ -110,6 +110,8 @@ def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tip
         query = query.filter_by(medio_pago=medio_pago)
     if tipo_entrega:
         query = query.filter_by(tipo_entrega=tipo_entrega)
+    if usuario_id_filtro is not None:
+        query = query.filter_by(usuario_id=usuario_id_filtro)
     if fecha:
         # SQLite vs Postgres: we can just filter by func.date
         query = query.filter(func.date(Pedido.fecha_pedido) == fecha)

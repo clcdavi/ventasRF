@@ -50,12 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Si no hay token y no está en el grupo de auth, redirigir a login
       router.replace('/(auth)/login');
     } else if (token && inAuthGroup) {
-      // Si hay token y está en login/register, redirigir al panel principal o repartidor
-      if (user?.rol === 'repartidor') {
-        router.replace('/(tabs)/envios');
-      } else {
-        router.replace('/(tabs)');
-      }
+      // Si hay token y está en login/register, redirigir al panel principal
+      router.replace('/(tabs)');
     }
   }, [token, segments, isLoading, user]);
 

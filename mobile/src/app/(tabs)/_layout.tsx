@@ -6,17 +6,14 @@ import { useAuth } from '../../stores/auth';
 
 export default function TabLayout() {
   const { user } = useAuth();
-  const role = user?.rol || 'customer';
+  const role = user?.rol || 'user';
 
   // Ocultar/mostrar pestañas dinámicamente según el rol
   const showTab = (tabName: 'index' | 'pedidos' | 'stats' | 'envios') => {
     if (role === 'admin') {
       return true;
     }
-    if (role === 'repartidor') {
-      return tabName !== 'stats';
-    }
-    // customer / cliente
+    // user / cliente
     return tabName === 'index' || tabName === 'pedidos';
   };
 
@@ -29,8 +26,7 @@ export default function TabLayout() {
           tabBarShowLabel: true,
           tabBarLabelStyle: {
             fontSize: 10,
-            fontWeight: '700',
-            fontFamily: 'System',
+            fontFamily: 'Inter_600SemiBold',
             paddingBottom: 4,
           },
           tabBarStyle: {
@@ -60,7 +56,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: role === 'customer' ? 'Inicio' : 'Resumen',
+            title: role === 'user' ? 'Inicio' : 'Resumen',
             tabBarIcon: ({ color }) => <LayoutDashboard size={20} color={color} strokeWidth={2.5} />,
             href: showTab('index') ? undefined : null,
           }}
@@ -68,7 +64,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="pedidos"
           options={{
-            title: role === 'customer' ? 'Mis Pedidos' : 'Pedidos',
+            title: role === 'user' ? 'Mis Pedidos' : 'Pedidos',
             tabBarIcon: ({ color }) => <ClipboardList size={20} color={color} strokeWidth={2.5} />,
             href: showTab('pedidos') ? undefined : null,
           }}

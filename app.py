@@ -73,6 +73,13 @@ def obtener_usuario_id_opcional():
         return None
     return user_id
 
+def obtener_usuario_actual():
+    user_id = obtener_usuario_id_opcional()
+    if not user_id:
+        return None
+    from db import Usuario
+    return Usuario.query.get(user_id)
+
 # ── Inicializar base de datos al arrancar ────────────────────────────────────
 with app.app_context():
     models.init_db()
@@ -239,12 +246,17 @@ def crear_pedido():
 
 @app.route('/api/pedidos', methods=['GET'])
 def listar_pedidos():
+    usuario = obtener_usuario_actual()
+    usuario_id_filtro = None
+    if usuario and usuario.rol != 'admin':
+        usuario_id_filtro = usuario.id
+
     estado     = request.args.get('estado') or None
     medio_pago = request.args.get('medio_pago') or None
     fecha      = request.args.get('fecha') or None
     busqueda   = request.args.get('q') or None
     tipo_entrega = request.args.get('tipo_entrega') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega)
+    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega, usuario_id_filtro=usuario_id_filtro)
     return jsonify(pedidos)
 
 
@@ -357,6 +369,10 @@ def historial_contacto():
 
 @app.route('/api/pedidos/envios', methods=['GET'])
 def listar_pedidos_envios():
+    usuario = obtener_usuario_actual()
+    if not usuario or usuario.rol != 'admin':
+        return jsonify({'error': 'Acceso denegado.'}), 403
+
     fecha = request.args.get('fecha') or None
     # Now returns all envios including Entregado so they remain visible
     pedidos = models.get_all_pedidos(fecha=fecha, tipo_entrega='envio')
@@ -371,6 +387,9 @@ def listar_pedidos_envios():
 
 @app.route('/api/stats', methods=['GET'])
 def estadisticas():
+    usuario = obtener_usuario_actual()
+    if not usuario or usuario.rol != 'admin':
+        return jsonify({'error': 'Acceso denegado.'}), 403
     fecha = request.args.get('fecha') or None
     return jsonify(models.get_stats(fecha=fecha))
 
@@ -390,6 +409,10 @@ def precios():
 
 @app.route('/api/export')
 def exportar_excel():
+    usuario = obtener_usuario_actual()
+    if not usuario or usuario.rol != 'admin':
+        return jsonify({'error': 'Acceso denegado.'}), 403
+
     estado     = request.args.get('estado') or None
     medio_pago = request.args.get('medio_pago') or None
     fecha      = request.args.get('fecha') or None

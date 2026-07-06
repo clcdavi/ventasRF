@@ -127,7 +127,7 @@ export default function EnviosScreen() {
         { text: 'Cancelar', style: 'cancel' },
         { 
           text: 'Asignar', 
-          onPress: (text) => {
+          onPress: (text?: string) => {
             if (text && text.trim().length > 0) {
               assignRepartidorMutation.mutate({ id: pedido.id, repartidor: text.trim() });
             }

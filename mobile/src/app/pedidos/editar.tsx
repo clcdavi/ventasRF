@@ -57,7 +57,11 @@ export default function EditarPedidoScreen() {
       setTelefono(pedido.telefono);
       setEmail(pedido.email || '');
       setDireccion(pedido.direccion);
-      setTipoEntrega(pedido.tipo_entrega);
+      if (pedido.tipo_entrega === 'envio' || pedido.tipo_entrega === 'retiro') {
+        setTipoEntrega(pedido.tipo_entrega as 'envio' | 'retiro');
+      } else {
+        setTipoEntrega('envio');
+      }
       setHorario(pedido.horario_entrega || '');
       setMedioPago(pedido.medio_pago);
       setPagado(pedido.pagado);

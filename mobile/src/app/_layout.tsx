@@ -5,6 +5,10 @@ import { StatusBar, View, Text, useWindowDimensions, StyleSheet, Platform, Press
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Maximize, Minimize } from 'lucide-react-native';
 import { AuthProvider } from '../stores/auth';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +25,23 @@ export default function RootLayout() {
   const isLargeScreen = Platform.OS === 'web' && width > 768;
   const [isExpandedView, setIsExpandedView] = useState(false);
 
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  React.useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   const appContent = (
     <Stack
       screenOptions={{
@@ -30,8 +51,7 @@ export default function RootLayout() {
         headerShadowVisible: false,
         headerTintColor: '#111111',
         headerTitleStyle: {
-          fontFamily: 'System',
-          fontWeight: '600',
+          fontFamily: 'Inter_600SemiBold',
           fontSize: 16,
         },
         contentStyle: {
@@ -57,8 +77,7 @@ export default function RootLayout() {
         options={{ 
           title: 'Detalle de Pedido',
           headerTitleStyle: {
-            fontFamily: 'System',
-            fontWeight: '600',
+            fontFamily: 'Inter_600SemiBold',
             fontSize: 16,
           }
         }} 
