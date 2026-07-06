@@ -1,0 +1,52 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: Build Frontend (Expo Web)
+        working-directory: ./mobile
+        run: npx expo export -p web
+
+      - name: Copy Frontend to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "mobile/dist/"
+          target: "~/ventasRF/"
+          strip_components: 0
+          
+      - name: Execute Backend Deployment on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ~/ventasRF
+            git pull origin main
+            docker-compose rm -fs web
+            docker-compose up -d --build web
+            sleep 10
+            docker-compose exec -T web alembic upgrade head
