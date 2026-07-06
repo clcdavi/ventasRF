@@ -9,8 +9,7 @@ import {
   ActivityIndicator, 
   Alert,
   ScrollView,
-  Platform,
-  Modal
+  Platform
 } from 'react-native';
 import { useEffect } from 'react';
 import { io } from 'socket.io-client';
@@ -24,14 +23,15 @@ import {
   Flame,
   ShoppingBag,
   Phone,
-  ChevronRight
+  ChevronDown,
+  Calendar
 } from 'lucide-react-native';
-import { Picker } from '@react-native-picker/picker';
 import { api } from '../../services/api';
 import { Pedido } from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
 import { formatDateToLabel } from '../../utils/date';
+import { CustomDropdown } from '../../components/CustomDropdown';
 
 export default function PedidosScreen() {
   const queryClient = useQueryClient();
@@ -40,8 +40,9 @@ export default function PedidosScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
+  const [selectedDate, setSelectedDate] = useState<string>('2026-05-25');
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [activeOrderForStatus, setActiveOrderForStatus] = useState<Pedido | null>(null);
 
   const { data: pedidos, isLoading, refetch, isRefetching } = useQuery({
@@ -53,23 +54,17 @@ export default function PedidosScreen() {
           fecha: selectedDate === 'all' ? undefined : selectedDate,
           q: searchQuery || undefined,
         }),
-    // refetchInterval eliminado gracias a WebSockets
   });
 
   useEffect(() => {
-    // Conectar a WebSocket
     const socket = io(API_BASE_URL);
-    
     socket.on('connect', () => {
       console.log('Conectado al servidor WebSocket');
     });
-
     socket.on('pedidos_actualizados', (data) => {
-      console.log('Pedidos actualizados:', data);
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
     });
-
     return () => {
       socket.disconnect();
     };
@@ -89,7 +84,6 @@ export default function PedidosScreen() {
     }
   }, [fechasPedidos]);
 
-  // Mutación para cambiar el estado de pago
   const togglePaidMutation = useMutation({
     mutationFn: ({ id, pagado }: { id: number; pagado: boolean }) => api.cambiarPagado(id, pagado),
     onSuccess: () => {
@@ -101,7 +95,6 @@ export default function PedidosScreen() {
     }
   });
 
-  // Mutación para cambiar el estado del pedido
   const cambiarEstadoMutation = useMutation({
     mutationFn: ({ id, estado }: { id: number; estado: string }) => api.cambiarEstado(id, estado),
     onSuccess: () => {
@@ -168,14 +161,11 @@ export default function PedidosScreen() {
               <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.estado}</Text>
             </Pressable>
           </View>
-
           <View style={styles.cardDivider} />
-
           <View style={styles.cardBody}>
             <Text style={styles.addressText} numberOfLines={1}>
               {item.tipo_entrega === 'envio' ? `🛵 Enviar a: ${item.direccion}` : '⛪ Retira en Iglesia'}
             </Text>
-
             <View style={styles.productsSummary}>
               {item.items?.map((prodItem, idx) => {
                 const isLocro = prodItem.producto_nombre?.toLowerCase().includes('locro');
@@ -192,14 +182,11 @@ export default function PedidosScreen() {
               })}
             </View>
           </View>
-
           <View style={styles.cardFooter}>
             <View>
               <Text style={styles.totalLabel}>TOTAL DEL PEDIDO</Text>
               <Text style={styles.totalValue}>{formatCurrency(item.monto_total)}</Text>
             </View>
-            
-            {/* Checkbox para Pago rápido */}
             <Pressable
               disabled={isCustomer}
               style={({ pressed }) => [
@@ -229,11 +216,10 @@ export default function PedidosScreen() {
   const datesList = fechasPedidos.map(dateStr => ({
     label: formatDateToLabel(dateStr),
     value: dateStr
-  })).concat([{ label: 'Todos', value: 'all' }]);
+  }));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Buscador de Alto Impacto Neumórfico (Inset look) */}
       {!isCustomer && (
         <View style={styles.searchOuter}>
           <View style={styles.searchContainer}>
@@ -249,25 +235,41 @@ export default function PedidosScreen() {
         </View>
       )}
 
-      {/* Selector de Evento */}
       {!isCustomer && (
-        <View style={[styles.filterDateRow, { alignItems: 'center' }]}>
-          <Text style={styles.dateLabel}>Filtrar fecha:</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedDate}
-              onValueChange={(itemValue) => setSelectedDate(itemValue)}
-              style={styles.picker}
+        <View style={styles.filterDateRow}>
+          <View style={{ flex: 1, paddingHorizontal: 20, marginTop: 16 }}>
+            <Text style={styles.dateLabel}>Filtrar por evento</Text>
+            <Pressable 
+              style={styles.dropdownButton}
+              onPress={() => setIsDateDropdownOpen(true)}
             >
-              {datesList.map((d) => (
-                <Picker.Item key={d.value} label={d.label} value={d.value} />
-              ))}
-            </Picker>
+              <Calendar size={18} color="#4F46E5" style={{ marginRight: 8 }} />
+              <Text style={styles.dropdownButtonText}>
+                {selectedDate === 'all' 
+                  ? 'Todos los eventos' 
+                  : datesList.find(d => d.value === selectedDate)?.label || 'Seleccionar...'}
+              </Text>
+              <ChevronDown size={18} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+            </Pressable>
           </View>
         </View>
       )}
 
-      {/* Filtros de Estado */}
+      <CustomDropdown
+        visible={isDateDropdownOpen}
+        title="Filtrar por Evento"
+        options={[
+          { label: 'Todos los eventos', value: 'all' },
+          ...datesList.map(d => ({ label: d.label, value: d.value }))
+        ]}
+        selectedValue={selectedDate}
+        onSelect={(val) => {
+          setSelectedDate(val as string);
+          setIsDateDropdownOpen(false);
+        }}
+        onClose={() => setIsDateDropdownOpen(false)}
+      />
+
       {!isCustomer && (
         <View style={styles.filterContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
@@ -298,7 +300,6 @@ export default function PedidosScreen() {
         </View>
       )}
 
-      {/* Listado */}
       {isLoading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="small" color="#4F46E5" />
@@ -322,48 +323,19 @@ export default function PedidosScreen() {
         />
       )}
 
-      {/* Modal para cambiar estado */}
-      <Modal
+      <CustomDropdown
         visible={statusModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setStatusModalVisible(false)}
-      >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setStatusModalVisible(false)}
-        >
-          <View style={styles.dropdownMenu}>
-            <Text style={styles.modalTitle}>Cambiar Estado</Text>
-            {estadosList.map((est) => (
-              <Pressable
-                key={est}
-                onPress={() => {
-                  if (activeOrderForStatus) {
-                    cambiarEstadoMutation.mutate({ id: activeOrderForStatus.id, estado: est });
-                  }
-                }}
-                style={({ pressed }) => [
-                  styles.dropdownMenuItem,
-                  activeOrderForStatus?.estado === est && styles.dropdownMenuItemActive,
-                  pressed && { backgroundColor: '#F1F5F9' }
-                ]}
-              >
-                <Text style={[
-                  styles.dropdownMenuText,
-                  activeOrderForStatus?.estado === est && styles.dropdownMenuTextActive
-                ]}>
-                  {est}
-                </Text>
-                {activeOrderForStatus?.estado === est && (
-                  <Check size={16} color="#4F46E5" style={{ marginLeft: 'auto' }} />
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
-
+        title="Cambiar Estado"
+        options={estadosList.map(est => ({ label: est, value: est }))}
+        selectedValue={activeOrderForStatus?.estado || ''}
+        onSelect={(val) => {
+          if (activeOrderForStatus) {
+            cambiarEstadoMutation.mutate({ id: activeOrderForStatus.id, estado: val as string });
+          }
+          setStatusModalVisible(false);
+        }}
+        onClose={() => setStatusModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -371,7 +343,7 @@ export default function PedidosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EBF0F5', // Fondo con tinte grisáceo/azulado suave para resaltar el neumorfismo
+    backgroundColor: '#EBF0F5',
   },
   searchOuter: {
     paddingHorizontal: 20,
@@ -380,7 +352,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E0E6ED', // Inset neumórfico (fondo ligeramente más oscuro que el fondo general)
+    backgroundColor: '#E0E6ED',
     borderRadius: 20,
     paddingHorizontal: 14,
     height: 48,
@@ -399,64 +371,38 @@ const styles = StyleSheet.create({
   },
   filterDateRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginTop: 16,
-    gap: 10,
   },
   dateLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#64748B',
+    marginBottom: 8,
   },
-  pickerContainer: {
-    flex: 1,
-    height: 36,
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 36,
-    width: '100%',
-    color: '#1E293B',
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-    fontSize: 13,
-    ...({ outline: 'none' } as any),
-  },
-  dateChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#E0E6ED',
-    borderWidth: 1,
-    borderColor: '#D1D9E6',
-  },
-  dateChipActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
     ...Platform.select({
       ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
       },
       android: {
         elevation: 2,
       },
     }),
   },
-  dateChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4A5568',
-  },
-  dateChipTextActive: {
-    color: '#4F46E5', // Color índigo activo en lugar de fondo negro plano
+  dropdownButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   filterContainer: {
     marginTop: 14,
@@ -495,14 +441,13 @@ const styles = StyleSheet.create({
     color: '#4A5568',
   },
   filterChipTextActive: {
-    color: '#4F46E5', // Color índigo activo
+    color: '#4F46E5',
   },
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 95,
   },
-  // Double-Bezel outer para lograr el efecto neumórfico extruido
   cardOuter: {
     backgroundColor: '#E6ECF5',
     borderRadius: 24,
@@ -675,55 +620,6 @@ const styles = StyleSheet.create({
     color: '#718096',
     fontWeight: '700',
     textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  dropdownMenu: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 340,
-    padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-      },
-      android: { elevation: 10 },
-    }),
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  dropdownMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginBottom: 2,
-  },
-  dropdownMenuItemActive: {
-    backgroundColor: '#EEF2FF',
-  },
-  dropdownMenuText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#334155',
-  },
-  dropdownMenuTextActive: {
-    color: '#4F46E5',
-    fontWeight: '700',
+    backgroundColor: '#F1F5F9',
   }
 });

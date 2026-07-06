@@ -21,6 +21,7 @@ import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
 import { formatDateToLabel } from '../../utils/date';
+import { CustomDropdown } from '../../components/CustomDropdown';
 
 export default function DashboardScreen() {
   const { user, signOut, updateUser } = useAuth();
@@ -385,44 +386,17 @@ export default function DashboardScreen() {
         </Pressable>
       </View>
 
-      <Modal
+      <CustomDropdown
         visible={isDropdownOpen}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsDropdownOpen(false)}
-      >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setIsDropdownOpen(false)}
-        >
-          <View style={styles.dropdownMenu}>
-            {datesList.map((d) => (
-              <Pressable
-                key={d.value}
-                onPress={() => {
-                  setSelectedDate(d.value);
-                  setIsDropdownOpen(false);
-                }}
-                style={({ pressed }) => [
-                  styles.dropdownMenuItem,
-                  selectedDate === d.value && styles.dropdownMenuItemActive,
-                  pressed && { backgroundColor: '#F1F5F9' }
-                ]}
-              >
-                <Text style={[
-                  styles.dropdownMenuText,
-                  selectedDate === d.value && styles.dropdownMenuTextActive
-                ]}>
-                  {d.label}
-                </Text>
-                {selectedDate === d.value && (
-                  <Check size={16} color="#4F46E5" style={{ marginLeft: 'auto' }} />
-                )}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
+        title="Seleccionar Fecha"
+        options={datesList.map(d => ({ label: d.label, value: d.value, icon: <Calendar size={16} color="#64748B" /> }))}
+        selectedValue={selectedDate}
+        onSelect={(val) => {
+          setSelectedDate(val as string);
+          setIsDropdownOpen(false);
+        }}
+        onClose={() => setIsDropdownOpen(false)}
+      />
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -716,45 +690,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#0F172A',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  dropdownMenu: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 340,
-    padding: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-      },
-      android: { elevation: 10 },
-    }),
-  },
-  dropdownMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginBottom: 2,
-  },
-  dropdownMenuItemActive: {
-    backgroundColor: '#EEF2FF',
-  },
-  dropdownMenuText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#334155',
   },
   dropdownMenuTextActive: {
     color: '#4F46E5',

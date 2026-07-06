@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, RefreshControl, ActivityIndicator, 
 import { useQuery } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { CustomDropdown } from '../../components/CustomDropdown';
 import * as Haptics from 'expo-haptics';
 import { storage } from '../../utils/storage';
 import { api } from '../../services/api';
@@ -18,13 +19,14 @@ import {
   RotateCcw,
   Clock,
   Info,
-  Download
+  Download,
+  ChevronDown
 } from 'lucide-react-native';
-import { Picker } from '@react-native-picker/picker';
 import { formatDateToLabel } from '../../utils/date';
 
 export default function StatsScreen() {
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
+  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
 
   const { data: stats, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['stats', 'details', selectedDate],
@@ -112,21 +114,32 @@ export default function StatsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Selector de Evento */}
       {datesList.length > 0 && (
-        <View style={[styles.selectorContainer, { alignItems: 'center' }]}>
-          <Text style={styles.dateLabel}>Filtrar fecha:</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedDate}
-              onValueChange={(itemValue) => setSelectedDate(itemValue)}
-              style={styles.picker}
-            >
-              {datesList.map((d) => (
-                <Picker.Item key={d.value} label={d.label} value={d.value} />
-              ))}
-            </Picker>
-          </View>
+        <View style={styles.filterDateRow}>
+          <Text style={styles.dateLabel}>Filtrar por evento:</Text>
+          <Pressable 
+            style={styles.dropdownButton}
+            onPress={() => setIsDateDropdownOpen(true)}
+          >
+            <Calendar size={18} color="#4F46E5" style={{ marginRight: 8 }} />
+            <Text style={styles.dropdownButtonText}>
+              {datesList.find(d => d.value === selectedDate)?.label || 'Seleccionar...'}
+            </Text>
+            <ChevronDown size={18} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+          </Pressable>
         </View>
       )}
+
+      <CustomDropdown
+        visible={isDateDropdownOpen}
+        title="Filtrar por Evento"
+        options={datesList.map(d => ({ label: d.label, value: d.value, icon: <Calendar size={16} color="#64748B" /> }))}
+        selectedValue={selectedDate}
+        onSelect={(val) => {
+          setSelectedDate(val as string);
+          setIsDateDropdownOpen(false);
+        }}
+        onClose={() => setIsDateDropdownOpen(false)}
+      />
 
       {/* Exportar a Excel Boton */}
       <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
@@ -280,69 +293,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  selectorContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginTop: 14,
+  filterDateRow: {
+    paddingHorizontal: 16,
+    marginTop: 16,
     marginBottom: 8,
-    gap: 10,
   },
   dateLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: '#64748B',
+    marginBottom: 8,
   },
-  pickerContainer: {
-    flex: 1,
-    height: 36,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 36,
-    width: '100%',
-    color: '#1E293B',
-    borderWidth: 0,
-    backgroundColor: 'transparent',
-    fontSize: 13,
-    ...({ outline: 'none' } as any),
-  },
-  selectorChip: {
+  dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
     ...Platform.select({
       ios: {
-        shadowColor: '#000000',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
+        shadowOpacity: 0.05,
         shadowRadius: 4,
       },
       android: {
-        elevation: 1,
+        elevation: 2,
       },
+      web: {
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+      }
     }),
   },
-  selectorChipActive: {
-    backgroundColor: '#1E293B',
-    borderColor: '#1E293B',
-  },
-  selectorChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-  },
-  selectorChipTextActive: {
-    color: '#FFFFFF',
+  dropdownButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   scrollContainer: {
     flex: 1,

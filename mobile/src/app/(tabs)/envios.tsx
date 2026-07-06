@@ -14,8 +14,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { Pedido } from '../../types';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CheckCircle, Clock, MapPin, User, MessageCircle, Phone, Flame, ShoppingBag, Info, Navigation, Route, Calendar } from 'lucide-react-native';
+import { CheckCircle, Clock, MapPin, User, MessageCircle, Phone, Flame, ShoppingBag, Info, Navigation, Route, Calendar, ChevronDown } from 'lucide-react-native';
 import { CustomPrompt } from '../../components/CustomPrompt';
+import { CustomDropdown } from '../../components/CustomDropdown';
 import { formatDateToLabel } from '../../utils/date';
 
 export default function EnviosScreen() {
@@ -30,6 +31,7 @@ export default function EnviosScreen() {
     pedido: null
   });
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Obtener pedidos de tipo 'envio'
   const { data: envios, isLoading, refetch, isRefetching } = useQuery({
@@ -339,31 +341,30 @@ export default function EnviosScreen() {
       />
       
       {/* Selector de Evento */}
-      <View style={styles.selectorContainer}>
-        {datesList.map((d) => (
-          <Pressable
-            key={d.value}
-            onPress={() => setSelectedDate(d.value)}
-            style={({ pressed }) => [
-              styles.selectorChip,
-              selectedDate === d.value && styles.selectorChipActive,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <Calendar 
-              size={14} 
-              color={selectedDate === d.value ? '#FFFFFF' : '#718096'} 
-              style={{ marginRight: 6 }} 
-            />
-            <Text style={[
-              styles.selectorChipText,
-              selectedDate === d.value && styles.selectorChipTextActive
-            ]}>
-              {d.label}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={styles.selectorOuter}>
+        <Pressable 
+          style={styles.dropdownButton}
+          onPress={() => setIsDropdownOpen(true)}
+        >
+          <Calendar size={18} color="#4F46E5" style={{ marginRight: 8 }} />
+          <Text style={styles.dropdownButtonText}>
+            {datesList.find(d => d.value === selectedDate)?.label || 'Seleccionar fecha...'}
+          </Text>
+          <ChevronDown size={18} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+        </Pressable>
       </View>
+
+      <CustomDropdown
+        visible={isDropdownOpen}
+        title="Seleccionar Fecha"
+        options={datesList.map(d => ({ label: d.label, value: d.value, icon: <Calendar size={16} color="#64748B" /> }))}
+        selectedValue={selectedDate}
+        onSelect={(val) => {
+          setSelectedDate(val as string);
+          setIsDropdownOpen(false);
+        }}
+        onClose={() => setIsDropdownOpen(false)}
+      />
 
       {/* Acciones de Ruta (Top) */}
       {!isLoading && (envios?.length || 0) > 0 && (
@@ -439,45 +440,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  selectorContainer: {
-    flexDirection: 'row',
+  selectorOuter: {
     paddingHorizontal: 20,
-    marginTop: 14,
-    marginBottom: 8,
-    gap: 10,
+    marginTop: 10,
+    marginBottom: 10,
   },
-  selectorChip: {
+  dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
     ...Platform.select({
       ios: {
-        shadowColor: '#000000',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
+        shadowOpacity: 0.05,
         shadowRadius: 4,
       },
       android: {
-        elevation: 1,
+        elevation: 2,
       },
+      web: {
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+      }
     }),
   },
-  selectorChipActive: {
-    backgroundColor: '#1E293B',
-    borderColor: '#1E293B',
-  },
-  selectorChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-  },
-  selectorChipTextActive: {
-    color: '#FFFFFF',
+  dropdownButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   listContent: {
     paddingHorizontal: 20,
