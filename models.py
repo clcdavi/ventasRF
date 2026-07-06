@@ -198,8 +198,18 @@ def update_pedido(pedido_id, data):
         
     monto_total = 0.0
     items = data.get('items', [])
+    processed_items = []
+    
     for item in items:
-        monto_total += item['precio_unitario'] * item['cantidad']
+        prod = Producto.query.get(item['producto_id'])
+        if prod:
+            precio_unitario = prod.precio
+            monto_total += precio_unitario * item['cantidad']
+            processed_items.append({
+                'producto_id': item['producto_id'],
+                'cantidad': item['cantidad'],
+                'precio_unitario': precio_unitario
+            })
         
     p.nombre_cliente = data['nombre_cliente']
     p.telefono = data['telefono']
@@ -220,7 +230,7 @@ def update_pedido(pedido_id, data):
     PedidoItem.query.filter_by(pedido_id=p.id).delete()
     
     # Add new items
-    for item in items:
+    for item in processed_items:
         pi = PedidoItem(
             pedido_id=p.id,
             producto_id=item['producto_id'],

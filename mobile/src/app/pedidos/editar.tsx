@@ -13,7 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Minus, Plus, Save, Info } from 'lucide-react-native';
+import { Minus, Plus, Save, Info, X, Check } from 'lucide-react-native';
+import { CustomAlert } from '../../components/CustomAlert';
 
 export default function EditarPedidoScreen() {
   const router = useRouter();
@@ -46,6 +47,18 @@ export default function EditarPedidoScreen() {
   const [fecha, setFecha] = useState('2026-05-25');
   const [estado, setEstado] = useState('Pendiente');
   const [notas, setNotas] = useState('');
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+    onClose?: () => void;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
 
   // items[producto_id] = cantidad
   const [items, setItems] = useState<Record<number, number>>({});
@@ -110,20 +123,32 @@ export default function EditarPedidoScreen() {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['envios'] });
-      Alert.alert('Éxito', 'Pedido actualizado correctamente.');
-      router.back();
+      showAlert('Éxito', 'Pedido actualizado correctamente.', 'success', () => router.back());
     },
     onError: (err: any) => {
-      Alert.alert('Error', err.message || 'No se pudo actualizar el pedido.');
+      showAlert('Error', err.message || 'No se pudo actualizar el pedido.', 'error');
     }
   });
 
+  const showAlert = (title: string, msg: string, type: 'success' | 'error' | 'info' = 'info', onCloseCb?: () => void) => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message: msg,
+      type,
+      onClose: () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+        if (onCloseCb) onCloseCb();
+      }
+    });
+  };
+
   const handleSubmit = () => {
-    if (!nombre.trim()) return Alert.alert('Validación', 'El nombre del cliente es obligatorio.');
-    if (!telefono.trim()) return Alert.alert('Validación', 'El teléfono es obligatorio.');
-    if (!direccion.trim()) return Alert.alert('Validación', 'La dirección es obligatoria.');
-    if (totalCantidades === 0) return Alert.alert('Validación', 'Debes agregar al menos un producto.');
-    if (!fecha.trim()) return Alert.alert('Validación', 'La fecha del evento es obligatoria.');
+    if (!nombre.trim()) return showAlert('Validación', 'El nombre del cliente es obligatorio.', 'error');
+    if (!telefono.trim()) return showAlert('Validación', 'El teléfono es obligatorio.', 'error');
+    if (!direccion.trim()) return showAlert('Validación', 'La dirección es obligatoria.', 'error');
+    if (totalCantidades === 0) return showAlert('Validación', 'Debes agregar al menos un producto.', 'error');
+    if (!fecha.trim()) return showAlert('Validación', 'La fecha del evento es obligatoria.', 'error');
 
     const payloadItems = Object.entries(items)
       .filter(([id, cant]) => cant > 0)
@@ -178,6 +203,13 @@ export default function EditarPedidoScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <CustomAlert 
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={alertConfig.onClose || (() => setAlertConfig(prev => ({ ...prev, visible: false })))}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Sección Datos Personales */}

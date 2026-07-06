@@ -14,7 +14,8 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Minus, Plus, Save, Check } from 'lucide-react-native';
+import { X, Minus, Plus, Check, Save } from 'lucide-react-native';
+import { CustomAlert } from '../../components/CustomAlert';
 import { useAuth } from '../../stores/auth';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -38,6 +39,18 @@ export default function NuevoPedidoScreen() {
   const [horario, setHorario] = useState('');
   const [medioPago, setMedioPago] = useState('efectivo');
   const [pagado, setPagado] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+    onClose?: () => void;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]); // Current date as default
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [fechaDate, setFechaDate] = useState(new Date());
@@ -123,20 +136,29 @@ export default function NuevoPedidoScreen() {
       queryClient.invalidateQueries({ queryKey: ['envios'] });
       queryClient.invalidateQueries({ queryKey: ['mis-pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['fechas-pedidos'] });
-      showAlert('Éxito', 'Pedido registrado correctamente.');
-      router.back();
+      showAlert('Éxito', 'Pedido registrado correctamente.', 'success', () => router.back());
     },
     onError: (err: any) => {
-      showAlert('Error', err.message || 'No se pudo guardar el pedido.');
+      showAlert('Error', err.message || 'No se pudo guardar el pedido.', 'error');
     }
   });
 
-  const showAlert = (title: string, msg: string) => {
-    if (Platform.OS === 'web') {
+  const showAlert = (title: string, msg: string, type: 'success' | 'error' | 'info' = 'info', onCloseCb?: () => void) => {
+    if (Platform.OS === 'web' && type !== 'success') {
       window.alert(`${title}: ${msg}`);
-    } else {
-      Alert.alert(title, msg);
+      if (onCloseCb) onCloseCb();
+      return;
     }
+    setAlertConfig({
+      visible: true,
+      title,
+      message: msg,
+      type,
+      onClose: () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+        if (onCloseCb) onCloseCb();
+      }
+    });
   };
 
   const handleSubmit = () => {
@@ -178,6 +200,13 @@ export default function NuevoPedidoScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <CustomAlert 
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={alertConfig.onClose || (() => setAlertConfig(prev => ({ ...prev, visible: false })))}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Sección Datos Personales */}
