@@ -9,7 +9,8 @@ import {
   ActivityIndicator, 
   Alert,
   ScrollView,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { useEffect } from 'react';
 import { io } from 'socket.io-client';
@@ -40,6 +41,8 @@ export default function PedidosScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [activeOrderForStatus, setActiveOrderForStatus] = useState<Pedido | null>(null);
 
   const { data: pedidos, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['pedidos', selectedEstado, selectedDate, searchQuery, isCustomer],
@@ -98,6 +101,20 @@ export default function PedidosScreen() {
     }
   });
 
+  // Mutación para cambiar el estado del pedido
+  const cambiarEstadoMutation = useMutation({
+    mutationFn: ({ id, estado }: { id: number; estado: string }) => api.cambiarEstado(id, estado),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      setStatusModalVisible(false);
+      setActiveOrderForStatus(null);
+    },
+    onError: (err) => {
+      Alert.alert('Error', 'No se pudo actualizar el estado.');
+    }
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Pendiente': return { bg: '#FFF5F5', text: '#EF4444' };
@@ -135,9 +152,21 @@ export default function PedidosScreen() {
                 <Text style={styles.clientPhone}>{item.telefono}</Text>
               </View>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+            <Pressable 
+              onPress={() => {
+                if (!isCustomer) {
+                  setActiveOrderForStatus(item);
+                  setStatusModalVisible(true);
+                }
+              }}
+              style={({ pressed }) => [
+                styles.statusBadge, 
+                { backgroundColor: statusStyle.bg },
+                !isCustomer && pressed && { opacity: 0.7 }
+              ]}
+            >
               <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.estado}</Text>
-            </View>
+            </Pressable>
           </View>
 
           <View style={styles.cardDivider} />
@@ -292,6 +321,49 @@ export default function PedidosScreen() {
           }
         />
       )}
+
+      {/* Modal para cambiar estado */}
+      <Modal
+        visible={statusModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setStatusModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setStatusModalVisible(false)}
+        >
+          <View style={styles.dropdownMenu}>
+            <Text style={styles.modalTitle}>Cambiar Estado</Text>
+            {estadosList.map((est) => (
+              <Pressable
+                key={est}
+                onPress={() => {
+                  if (activeOrderForStatus) {
+                    cambiarEstadoMutation.mutate({ id: activeOrderForStatus.id, estado: est });
+                  }
+                }}
+                style={({ pressed }) => [
+                  styles.dropdownMenuItem,
+                  activeOrderForStatus?.estado === est && styles.dropdownMenuItemActive,
+                  pressed && { backgroundColor: '#F1F5F9' }
+                ]}
+              >
+                <Text style={[
+                  styles.dropdownMenuText,
+                  activeOrderForStatus?.estado === est && styles.dropdownMenuTextActive
+                ]}>
+                  {est}
+                </Text>
+                {activeOrderForStatus?.estado === est && (
+                  <Check size={16} color="#4F46E5" style={{ marginLeft: 'auto' }} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -603,5 +675,55 @@ const styles = StyleSheet.create({
     color: '#718096',
     fontWeight: '700',
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  dropdownMenu: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 340,
+    padding: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+      },
+      android: { elevation: 10 },
+    }),
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  dropdownMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 2,
+  },
+  dropdownMenuItemActive: {
+    backgroundColor: '#EEF2FF',
+  },
+  dropdownMenuText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#334155',
+  },
+  dropdownMenuTextActive: {
+    color: '#4F46E5',
+    fontWeight: '700',
   }
 });
