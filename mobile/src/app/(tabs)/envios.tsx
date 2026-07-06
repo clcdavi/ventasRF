@@ -99,7 +99,8 @@ export default function EnviosScreen() {
       productsText += `\n- ${prodItem.cantidad} ${prodItem.producto_nombre}`;
     });
 
-    const message = `Hola ${pedido.nombre_cliente}, te escribimos de Ventas RF. Tu pedido está en camino a tu domicilio (${pedido.direccion}). ${productsText}\nTotal: ${formatCurrency(pedido.monto_total)} (${pedido.pagado ? 'Cobrado' : 'A cobrar'}). ¡Muchas gracias!`;
+    const aliasText = !pedido.pagado ? '\nAlias: buffet.rf' : '';
+    const message = `Hola ${pedido.nombre_cliente}, te escribimos de Ventas RF. Tu pedido está en camino a tu domicilio (${pedido.direccion}). ${productsText}\nTotal: ${formatCurrency(pedido.monto_total)} (${pedido.pagado ? 'Cobrado' : 'A cobrar'}).${aliasText}\n¡Muchas gracias!`;
     const encodedMessage = encodeURIComponent(message);
     
     const countryCode = cleanPhone.startsWith('54') ? '' : '549';
