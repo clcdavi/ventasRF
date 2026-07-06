@@ -45,6 +45,7 @@ export default function DashboardScreen() {
   const [profileTelefono, setProfileTelefono] = useState(user?.telefono || '');
   const [profileDireccion, setProfileDireccion] = useState(user?.direccion || '');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'info' as 'success' | 'error' | 'info' });
 
   React.useEffect(() => {
     if (isCustomer) {
@@ -63,7 +64,7 @@ export default function DashboardScreen() {
 
   const handleUpdateProfile = async () => {
     if (!profileTelefono) {
-      if (Platform.OS === 'web') window.alert('Por favor completa tu teléfono.');
+      setAlertConfig({ visible: true, title: 'Atención', message: 'Por favor completa tu teléfono.', type: 'info' });
       return;
     }
     setIsUpdatingProfile(true);
@@ -71,10 +72,10 @@ export default function DashboardScreen() {
       const res = await api.updateProfile({ telefono: profileTelefono, direccion: profileDireccion });
       if (res.ok) {
         await updateUser(res.user);
-        if (Platform.OS === 'web') window.alert('Perfil actualizado correctamente.');
+        setAlertConfig({ visible: true, title: '¡Excelente!', message: 'Perfil actualizado correctamente.', type: 'success' });
       }
     } catch (e) {
-      if (Platform.OS === 'web') window.alert('Error al actualizar el perfil.');
+      setAlertConfig({ visible: true, title: 'Error', message: 'Hubo un problema al actualizar el perfil.', type: 'error' });
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -218,6 +219,22 @@ export default function DashboardScreen() {
               </Text>
               <Pressable style={styles.tutorialButton} onPress={closeTutorial}>
                 <Text style={styles.tutorialButtonText}>¡Entendido!</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de Alertas (Reemplazo de window.alert) */}
+        <Modal visible={alertConfig.visible} transparent animationType="fade">
+          <View style={styles.tutorialOverlay}>
+            <View style={styles.tutorialContent}>
+              <View style={[styles.tutorialIconWrapper, alertConfig.type === 'success' ? {backgroundColor: '#D1FAE5'} : alertConfig.type === 'error' ? {backgroundColor: '#FEE2E2'} : {backgroundColor: '#EEF2FF'}]}>
+                {alertConfig.type === 'success' ? <CheckCircle size={32} color="#10B981" /> : alertConfig.type === 'error' ? <Info size={32} color="#EF4444" /> : <Info size={32} color="#4F46E5" />}
+              </View>
+              <Text style={styles.tutorialTitle}>{alertConfig.title}</Text>
+              <Text style={[styles.tutorialText, { textAlign: 'center' }]}>{alertConfig.message}</Text>
+              <Pressable style={[styles.tutorialButton, alertConfig.type === 'success' ? {backgroundColor: '#10B981'} : alertConfig.type === 'error' ? {backgroundColor: '#EF4444'} : {}]} onPress={() => setAlertConfig({ ...alertConfig, visible: false })}>
+                <Text style={styles.tutorialButtonText}>Aceptar</Text>
               </Pressable>
             </View>
           </View>
