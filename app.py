@@ -558,12 +558,7 @@ def register_user():
         token = generar_token(user['id'])
         return jsonify({
             'token': token,
-            'user': {
-                'id': user['id'],
-                'nombre': user['nombre'],
-                'email': user['email'],
-                'rol': user.get('rol', 'user')
-            }
+            'user': user
         }), 201
     except Exception as e:
         return jsonify({'error': f'Error al registrar el usuario: {str(e)}'}), 500
@@ -592,12 +587,7 @@ def login_user():
     token = generar_token(user['id'])
     return jsonify({
         'token': token,
-        'user': {
-            'id': user['id'],
-            'nombre': user['nombre'],
-            'email': user['email'],
-            'rol': user.get('rol', 'user')
-        }
+        'user': user
     }), 200
 
 
@@ -638,12 +628,7 @@ def google_login_user():
         token = generar_token(user['id'])
         return jsonify({
             'token': token,
-            'user': {
-                'id': user['id'],
-                'nombre': user['nombre'],
-                'email': user['email'],
-                'rol': user.get('rol', 'user')
-            }
+            'user': user
         }), 200
         
     except ValueError as e:
