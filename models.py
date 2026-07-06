@@ -92,7 +92,7 @@ def _attach_items_to_pedidos(pedidos_dicts):
     items_by_pedido = {}
     for item_model, prod_nombre in items:
         item_dict = _model_to_dict(item_model)
-        item_dict['nombre_producto'] = prod_nombre
+        item_dict['producto_nombre'] = prod_nombre
         if item_dict['pedido_id'] not in items_by_pedido:
             items_by_pedido[item_dict['pedido_id']] = []
         items_by_pedido[item_dict['pedido_id']].append(item_dict)
