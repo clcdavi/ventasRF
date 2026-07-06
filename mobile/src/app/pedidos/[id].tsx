@@ -8,7 +8,8 @@ import {
   ActivityIndicator, 
   Alert, 
   Linking,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -52,6 +53,9 @@ export default function PedidoDetailScreen() {
   // Audio state
   const [sound, setSound] = React.useState<Audio.Sound>();
   const prevEstadoRef = React.useRef<string | null>(null);
+
+  // Modal state
+  const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
 
   React.useEffect(() => {
     return sound
@@ -171,24 +175,7 @@ export default function PedidoDetailScreen() {
   };
 
   const handleDelete = () => {
-    if (Platform.OS === 'web') {
-      if (window.confirm('¿Estás seguro de que deseas eliminar este pedido de forma permanente? Esta acción no se puede deshacer.')) {
-        deleteMutation.mutate();
-      }
-    } else {
-      Alert.alert(
-        'Eliminar Pedido',
-        '¿Estás seguro de que deseas eliminar este pedido de forma permanente? Esta acción no se puede deshacer.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'Eliminar', 
-            style: 'destructive',
-            onPress: () => deleteMutation.mutate()
-          }
-        ]
-      );
-    }
+    setDeleteModalVisible(true);
   };
 
   if (isLoading) {
@@ -405,11 +392,122 @@ export default function PedidoDetailScreen() {
         )}
 
       </ScrollView>
+
+      <Modal
+        visible={deleteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <Trash2 size={24} color="#DC2626" />
+            </View>
+            <Text style={styles.modalTitle}>Eliminar Pedido</Text>
+            <Text style={styles.modalMessage}>
+              ¿Estás seguro de que deseas eliminar este pedido de forma permanente? Esta acción no se puede deshacer.
+            </Text>
+            <View style={styles.modalButtonsRow}>
+              <Pressable
+                style={styles.modalCancelButton}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalDeleteButton}
+                onPress={() => {
+                  setDeleteModalVisible(false);
+                  deleteMutation.mutate();
+                }}
+              >
+                <Text style={styles.modalDeleteButtonText}>Eliminar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCancelButtonText: {
+    color: '#334155',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalDeleteButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#DC2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalDeleteButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
