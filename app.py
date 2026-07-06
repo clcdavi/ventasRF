@@ -720,6 +720,35 @@ def upgrade_role():
     })
 
 
+@app.route('/api/auth/profile', methods=['PUT'])
+def update_profile():
+    # Verificar autenticación
+    token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+    
+    if not token:
+        return jsonify({'error': 'Token de autenticación faltante.'}), 401
+    
+    user_id = obtener_usuario_desde_token(token)
+    if user_id in ('token_expirado', 'token_invalido'):
+        return jsonify({'error': 'Token inválido o expirado.'}), 401
+
+    data = request.get_json() or {}
+    ok = models.update_usuario_profile(user_id, data)
+    
+    if not ok:
+        return jsonify({'error': 'No se pudo actualizar el perfil.'}), 500
+
+    updated_user = models.get_usuario_by_id(user_id)
+    return jsonify({
+        'ok': True,
+        'user': updated_user
+    })
+
+
 # ── Arranque ─────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=8080)

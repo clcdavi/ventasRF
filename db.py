@@ -24,6 +24,8 @@ class Usuario(db.Model):
     email = db.Column(db.Text, nullable=False, unique=True)
     password_hash = db.Column(db.Text, nullable=False)
     rol = db.Column(db.Text, nullable=False, default='user')
+    telefono = db.Column(db.Text)
+    direccion = db.Column(db.Text)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 class Producto(db.Model):

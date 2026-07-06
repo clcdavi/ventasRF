@@ -386,6 +386,8 @@ def create_usuario(nombre, email, password_hash, rol='user'):
         'nombre': u.nombre,
         'email': u.email,
         'rol': u.rol,
+        'telefono': u.telefono,
+        'direccion': u.direccion,
         'created_at': _serialize(u.created_at)
     }
 
@@ -399,6 +401,8 @@ def get_usuario_by_email(email):
         'email': u.email,
         'password_hash': u.password_hash,
         'rol': u.rol,
+        'telefono': u.telefono,
+        'direccion': u.direccion,
         'created_at': _serialize(u.created_at)
     }
 
@@ -411,6 +415,8 @@ def get_usuario_by_id(user_id):
         'nombre': u.nombre,
         'email': u.email,
         'rol': u.rol,
+        'telefono': u.telefono,
+        'direccion': u.direccion,
         'created_at': _serialize(u.created_at)
     }
 
@@ -419,5 +425,14 @@ def update_usuario_rol(user_id, nuevo_rol):
     if not u:
         return False
     u.rol = nuevo_rol
+    db.session.commit()
+    return True
+
+def update_usuario_profile(user_id, data):
+    u = Usuario.query.get(user_id)
+    if not u:
+        return False
+    if 'telefono' in data: u.telefono = data['telefono']
+    if 'direccion' in data: u.direccion = data['direccion']
     db.session.commit()
     return True

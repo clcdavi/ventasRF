@@ -222,4 +222,12 @@ export const api = {
       body: JSON.stringify({ codigo }),
     });
   },
+
+  // Autenticación: Actualizar perfil de usuario
+  updateProfile: (data: { telefono?: string; direccion?: string }) => {
+    return fetchJson<{ ok: boolean; user: User }>('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 };

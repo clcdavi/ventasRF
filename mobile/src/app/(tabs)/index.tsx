@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput, Modal } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput, Modal, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
@@ -15,11 +15,16 @@ import {
   ChevronRight,
   LogOut,
   Check,
-  ChevronDown
+  ChevronDown,
+  MapPin,
+  Phone,
+  Save,
+  X
 } from 'lucide-react-native';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
+import { storage } from '../../utils/storage';
 import { formatDateToLabel } from '../../utils/date';
 import { CustomDropdown } from '../../components/CustomDropdown';
 
@@ -35,6 +40,45 @@ export default function DashboardScreen() {
   const [upgrading, setUpgrading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [profileTelefono, setProfileTelefono] = useState(user?.telefono || '');
+  const [profileDireccion, setProfileDireccion] = useState(user?.direccion || '');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  React.useEffect(() => {
+    if (isCustomer) {
+      storage.getItem('has_seen_tutorial').then(val => {
+        if (!val) {
+          setShowTutorial(true);
+        }
+      });
+    }
+  }, [isCustomer]);
+
+  const closeTutorial = async () => {
+    setShowTutorial(false);
+    await storage.setItem('has_seen_tutorial', 'true');
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!profileTelefono || !profileDireccion) {
+      if (Platform.OS === 'web') window.alert('Por favor completa ambos campos.');
+      return;
+    }
+    setIsUpdatingProfile(true);
+    try {
+      const res = await api.updateProfile({ telefono: profileTelefono, direccion: profileDireccion });
+      if (res.ok) {
+        await updateUser(res.user);
+        if (Platform.OS === 'web') window.alert('Perfil actualizado correctamente.');
+      }
+    } catch (e) {
+      if (Platform.OS === 'web') window.alert('Error al actualizar el perfil.');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
 
   const handleUpgradeRole = async () => {
     if (!staffCode.trim()) {
@@ -159,6 +203,26 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        <Modal visible={showTutorial} transparent animationType="fade">
+          <View style={styles.tutorialOverlay}>
+            <View style={styles.tutorialContent}>
+              <View style={styles.tutorialIconWrapper}>
+                <ShoppingBag size={32} color="#4F46E5" />
+              </View>
+              <Text style={styles.tutorialTitle}>¡Bienvenido a Ventas RF!</Text>
+              <Text style={styles.tutorialText}>
+                Comienza a disfrutar de nuestros productos en 3 simples pasos:{'\n\n'}
+                1. Explora el menú y elige tus favoritos.{'\n'}
+                2. Selecciona envío a domicilio o retiro.{'\n'}
+                3. Sigue el estado de tu pedido en tiempo real.
+              </Text>
+              <Pressable style={styles.tutorialButton} onPress={closeTutorial}>
+                <Text style={styles.tutorialButtonText}>¡Entendido!</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
         <ScrollView
           style={styles.scrollContainer}
           contentContainerStyle={styles.scrollContent}
@@ -167,6 +231,72 @@ export default function DashboardScreen() {
             <RefreshControl refreshing={isRefetchingPedidos} onRefresh={refetchPedidos} tintColor="#4F46E5" />
           }
         >
+          {/* Carrusel de Promociones */}
+          <View style={styles.carouselContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContent}>
+              <View style={styles.carouselCard}>
+                <View style={[styles.carouselImagePlaceholder, { backgroundColor: '#FFEDD5' }]}>
+                  <Text style={{color: '#EA580C', fontWeight: 'bold'}}>Placeholder Locro</Text>
+                </View>
+                <Text style={styles.carouselTitle}>Porción de Locro</Text>
+              </View>
+              <View style={styles.carouselCard}>
+                <View style={[styles.carouselImagePlaceholder, { backgroundColor: '#E0E7FF' }]}>
+                  <Text style={{color: '#4F46E5', fontWeight: 'bold'}}>Placeholder Pastelitos</Text>
+                </View>
+                <Text style={styles.carouselTitle}>Docena Surtida</Text>
+              </View>
+            </ScrollView>
+          </View>
+
+          {(!user?.telefono || !user?.direccion) && (
+            <View style={styles.profileCard}>
+              <View style={styles.profileHeader}>
+                <Info size={20} color="#F59E0B" />
+                <Text style={styles.profileTitle}>Completa tu perfil</Text>
+              </View>
+              <Text style={styles.profileDesc}>Para agilizar tu entrega, guarda tus datos de contacto habituales.</Text>
+              
+              <View style={styles.profileInputWrapper}>
+                <Phone size={16} color="#94A3B8" />
+                <TextInput
+                  style={styles.profileInput}
+                  placeholder="Teléfono"
+                  value={profileTelefono}
+                  onChangeText={setProfileTelefono}
+                  keyboardType="phone-pad"
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+
+              <View style={styles.profileInputWrapper}>
+                <MapPin size={16} color="#94A3B8" />
+                <TextInput
+                  style={styles.profileInput}
+                  placeholder="Dirección completa"
+                  value={profileDireccion}
+                  onChangeText={setProfileDireccion}
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+
+              <Pressable 
+                style={styles.profileSaveButton} 
+                onPress={handleUpdateProfile}
+                disabled={isUpdatingProfile}
+              >
+                {isUpdatingProfile ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <>
+                    <Save size={16} color="#FFF" />
+                    <Text style={styles.profileSaveText}>Guardar Datos</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          )}
+
           {/* Card: Realizar Pedido */}
           <View style={[styles.doubleBezelOuter, { marginTop: 20 }]}>
             <View style={styles.doubleBezelInner}>
@@ -1324,5 +1454,153 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     marginTop: 8,
+  },
+  tutorialOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  tutorialContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
+      android: { elevation: 10 },
+      web: { boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }
+    })
+  },
+  tutorialIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  tutorialTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  tutorialText: {
+    fontSize: 14,
+    color: '#475569',
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  tutorialButton: {
+    backgroundColor: '#4F46E5',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  tutorialButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  carouselContainer: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  carouselContent: {
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  carouselCard: {
+    width: 200,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 },
+      android: { elevation: 3 },
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }
+    })
+  },
+  carouselImagePlaceholder: {
+    width: '100%',
+    height: 100,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  carouselTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  profileCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  profileTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#B45309',
+    marginLeft: 8,
+  },
+  profileDesc: {
+    fontSize: 13,
+    color: '#D97706',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  profileInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    height: 44,
+  },
+  profileInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#1E293B',
+    outlineStyle: 'none',
+  },
+  profileSaveButton: {
+    backgroundColor: '#F59E0B',
+    flexDirection: 'row',
+    height: 44,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  profileSaveText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    marginLeft: 8,
   },
 });
