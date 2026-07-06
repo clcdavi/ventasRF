@@ -62,8 +62,8 @@ export default function DashboardScreen() {
   };
 
   const handleUpdateProfile = async () => {
-    if (!profileTelefono || !profileDireccion) {
-      if (Platform.OS === 'web') window.alert('Por favor completa ambos campos.');
+    if (!profileTelefono) {
+      if (Platform.OS === 'web') window.alert('Por favor completa tu teléfono.');
       return;
     }
     setIsUpdatingProfile(true);
@@ -235,27 +235,23 @@ export default function DashboardScreen() {
           <View style={styles.carouselContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContent}>
               <View style={styles.carouselCard}>
-                <View style={[styles.carouselImagePlaceholder, { backgroundColor: '#FFEDD5' }]}>
-                  <Text style={{color: '#EA580C', fontWeight: 'bold'}}>Placeholder Locro</Text>
-                </View>
+                <Image source={require('../../../assets/images/locro.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Porción de Locro</Text>
               </View>
               <View style={styles.carouselCard}>
-                <View style={[styles.carouselImagePlaceholder, { backgroundColor: '#E0E7FF' }]}>
-                  <Text style={{color: '#4F46E5', fontWeight: 'bold'}}>Placeholder Pastelitos</Text>
-                </View>
+                <Image source={require('../../../assets/images/pastelitos.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Docena Surtida</Text>
               </View>
             </ScrollView>
           </View>
 
-          {(!user?.telefono || !user?.direccion) && (
+          {(!user?.telefono) && (
             <View style={styles.profileCard}>
               <View style={styles.profileHeader}>
                 <Info size={20} color="#F59E0B" />
                 <Text style={styles.profileTitle}>Completa tu perfil</Text>
               </View>
-              <Text style={styles.profileDesc}>Para agilizar tu entrega, guarda tus datos de contacto habituales.</Text>
+              <Text style={styles.profileDesc}>Para agilizar tu entrega, guarda tu número de teléfono de contacto.</Text>
               
               <View style={styles.profileInputWrapper}>
                 <Phone size={16} color="#94A3B8" />
@@ -265,17 +261,6 @@ export default function DashboardScreen() {
                   value={profileTelefono}
                   onChangeText={setProfileTelefono}
                   keyboardType="phone-pad"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              <View style={styles.profileInputWrapper}>
-                <MapPin size={16} color="#94A3B8" />
-                <TextInput
-                  style={styles.profileInput}
-                  placeholder="Dirección completa"
-                  value={profileDireccion}
-                  onChangeText={setProfileDireccion}
                   placeholderTextColor="#94A3B8"
                 />
               </View>
@@ -463,13 +448,21 @@ export default function DashboardScreen() {
     value: dateStr
   })).concat([{ label: 'Histórico', value: 'all' }]);
 
+  const adminUserInitial = user?.nombre?.charAt(0)?.toUpperCase() ?? '?';
+  const adminFirstName = user?.nombre?.split(' ')[0] ?? 'Admin';
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Encabezado Editorial Apple-like */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerSubtitle}>SISTEMA DE GESTIÓN</Text>
-          <Text style={styles.headerTitle}>Resumen General</Text>
+      {/* Encabezado Admin al estilo Cliente */}
+      <View style={styles.customerHeader}>
+        {/* Avatar con inicial */}
+        <View style={styles.customerAvatar}>
+          <Text style={styles.customerAvatarText}>{adminUserInitial}</Text>
+        </View>
+        {/* Saludo y marca */}
+        <View style={styles.customerHeaderText}>
+          <Text style={styles.customerHeaderGreeting}>¡Hola, {adminFirstName}! 👋</Text>
+          <Text style={styles.customerHeaderBrand}>Panel de Gestión</Text>
         </View>
         <View style={styles.headerActions}>
           <Pressable
