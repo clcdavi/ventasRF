@@ -153,6 +153,7 @@ export default function EnviosScreen() {
     const waypoints = selectedPedidos.slice(0, -1);
 
     let url = `https://www.google.com/maps/dir/?api=1`;
+    url += `&origin=${encodeURIComponent('Blanco Encalada 2384, virreyes')}`;
     url += `&destination=${encodeURIComponent(destination.direccion)}`;
     
     if (waypoints.length > 0) {
