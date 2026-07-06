@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Minus, Plus, Save } from 'lucide-react-native';
+import { Minus, Plus, Save, Check } from 'lucide-react-native';
 import { useAuth } from '../../stores/auth';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -29,9 +29,10 @@ export default function NuevoPedidoScreen() {
     queryFn: () => api.getProductos(true),
   });
 
-  const [nombre, setNombre] = useState(isCustomer ? user?.nombre || '' : '');
+  const [isForOther, setIsForOther] = useState(false);
+  const [nombre, setNombre] = useState(user?.nombre || '');
   const [telefono, setTelefono] = useState('');
-  const [email, setEmail] = useState(isCustomer ? user?.email || '' : '');
+  const [email, setEmail] = useState(user?.email || '');
   const [direccion, setDireccion] = useState('');
   const [tipoEntrega, setTipoEntrega] = useState<'envio' | 'retiro'>('envio');
   const [horario, setHorario] = useState('');
@@ -48,12 +49,26 @@ export default function NuevoPedidoScreen() {
   const { data: misPedidos } = useQuery({
     queryKey: ['mis-pedidos'],
     queryFn: () => api.getMisPedidos(),
-    enabled: isCustomer,
   });
 
+  const handleToggleForOther = () => {
+    if (!isForOther) {
+      setNombre('');
+      setTelefono('');
+      setEmail('');
+      setDireccion('');
+    } else {
+      setNombre(user?.nombre || '');
+      setEmail(user?.email || '');
+      setTelefono('');
+      setDireccion('');
+    }
+    setIsForOther(!isForOther);
+  };
+
   useEffect(() => {
-    // Si el cliente tiene pedidos anteriores y los campos están vacíos
-    if (isCustomer && misPedidos && misPedidos.length > 0) {
+    // Si no es para otro cliente y hay pedidos anteriores
+    if (!isForOther && misPedidos && misPedidos.length > 0) {
       const ultimoPedido = misPedidos[0]; // Assuming they are ordered by date DESC
       
       // Auto-fill telefono if empty
@@ -62,13 +77,11 @@ export default function NuevoPedidoScreen() {
       }
       
       // Auto-fill direccion if empty (and not setting to 'Retiro en Iglesia' if that was their last)
-      // Actually, if their last was Retiro, maybe we shouldn't autofill that as a physical address,
-      // but let's just auto-fill whatever they had if it's not Retiro, or if it is, set tipoEntrega to retiro.
       if (!direccion && ultimoPedido.direccion && ultimoPedido.direccion !== 'Retiro en Iglesia') {
         setDireccion(ultimoPedido.direccion);
       }
     }
-  }, [isCustomer, misPedidos]);
+  }, [isForOther, misPedidos]);
 
   useEffect(() => {
     if (tipoEntrega === 'retiro') {
@@ -162,6 +175,18 @@ export default function NuevoPedidoScreen() {
         {/* Sección Datos Personales */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Datos del Cliente</Text>
+          
+          {!isCustomer && (
+            <Pressable 
+              style={styles.clientToggleRow}
+              onPress={handleToggleForOther}
+            >
+              <View style={[styles.checkbox, isForOther && styles.checkboxChecked]}>
+                {isForOther && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+              </View>
+              <Text style={styles.toggleText}>Generar pedido para otro cliente</Text>
+            </Pressable>
+          )}
           
           <Text style={styles.label}>Nombre y Apellido *</Text>
           <TextInput
@@ -499,10 +524,26 @@ const styles = StyleSheet.create({
     color: '#111111',
     fontFamily: 'System',
   },
+  errorMsg: {
+    color: '#EF4444',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  clientToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   toggleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginTop: 16,
     paddingVertical: 8,
     borderTopWidth: 1,
@@ -581,5 +622,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'System',
   },
-  pressed: { opacity: 0.9 }
+  pressed: { opacity: 0.9 },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E0',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checkboxChecked: {
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+  }
 });
