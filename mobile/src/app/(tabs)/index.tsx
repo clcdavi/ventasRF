@@ -26,7 +26,7 @@ import { CustomDropdown } from '../../components/CustomDropdown';
 export default function DashboardScreen() {
   const { user, signOut, updateUser } = useAuth();
   const [viewAsCustomer, setViewAsCustomer] = useState(false);
-  const isCustomer = user?.rol === 'user' || viewAsCustomer;
+  const isCustomer = user?.rol === 'user' || user?.rol === 'customer' || viewAsCustomer;
   const [selectedDate, setSelectedDate] = useState<string>('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
@@ -103,7 +103,7 @@ export default function DashboardScreen() {
 
   if (isCustomer) {
     const activePedido = misPedidos?.find(p => p.estado !== 'Entregado');
-    const isRealCustomer = user?.rol === 'user';
+    const isRealCustomer = user?.rol === 'user' || user?.rol === 'customer';
     const userInitial = user?.nombre?.charAt(0)?.toUpperCase() ?? '?';
     const firstName = user?.nombre?.split(' ')[0] ?? 'Cliente';
     return (
