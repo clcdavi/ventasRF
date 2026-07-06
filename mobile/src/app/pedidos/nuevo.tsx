@@ -123,20 +123,28 @@ export default function NuevoPedidoScreen() {
       queryClient.invalidateQueries({ queryKey: ['envios'] });
       queryClient.invalidateQueries({ queryKey: ['mis-pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['fechas-pedidos'] });
-      Alert.alert('Éxito', 'Pedido registrado correctamente.');
+      showAlert('Éxito', 'Pedido registrado correctamente.');
       router.back();
     },
     onError: (err: any) => {
-      Alert.alert('Error', err.message || 'No se pudo guardar el pedido.');
+      showAlert('Error', err.message || 'No se pudo guardar el pedido.');
     }
   });
 
+  const showAlert = (title: string, msg: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}: ${msg}`);
+    } else {
+      Alert.alert(title, msg);
+    }
+  };
+
   const handleSubmit = () => {
-    if (!nombre.trim()) return Alert.alert('Validación', 'El nombre del cliente es obligatorio.');
-    if (!telefono.trim()) return Alert.alert('Validación', 'El teléfono es obligatorio.');
-    if (!direccion.trim()) return Alert.alert('Validación', 'La dirección es obligatoria.');
-    if (totalCantidades === 0) return Alert.alert('Validación', 'Debes agregar al menos un producto.');
-    if (!fecha.trim()) return Alert.alert('Validación', 'La fecha del evento es obligatoria.');
+    if (!(nombre || '').trim()) return showAlert('Validación', 'El nombre del cliente es obligatorio.');
+    if (!(telefono || '').trim()) return showAlert('Validación', 'El teléfono es obligatorio.');
+    if (!(direccion || '').trim()) return showAlert('Validación', 'La dirección es obligatoria.');
+    if (totalCantidades === 0) return showAlert('Validación', 'Debes agregar al menos un producto.');
+    if (!(fecha || '').trim()) return showAlert('Validación', 'La fecha del evento es obligatoria.');
 
     const payloadItems = Object.entries(items)
       .filter(([id, cant]) => cant > 0)
@@ -391,12 +399,12 @@ export default function NuevoPedidoScreen() {
           <Text style={styles.footerTotalValue}>{formatCurrency(total)}</Text>
         </View>
         <Pressable 
-          disabled={createMutation.isPending || totalCantidades === 0}
+          disabled={createMutation.isPending}
           onPress={handleSubmit}
           style={({ pressed }) => [
             styles.submitButton, 
             pressed && styles.pressed,
-            (createMutation.isPending || totalCantidades === 0) && styles.submitButtonDisabled
+            createMutation.isPending && styles.submitButtonDisabled
           ]}
         >
           {createMutation.isPending ? (
