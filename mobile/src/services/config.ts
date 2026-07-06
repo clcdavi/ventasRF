@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 // URL base del servidor Oracle Cloud (producción)
-const ORACLE_CLOUD_URL = 'http://137.131.245.249';
+const ORACLE_CLOUD_URL = 'https://pedidosrf.com';
 
 /**
  * Determina la URL del backend según la plataforma.
