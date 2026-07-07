@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput, Modal, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, Pressable, ActivityIndicator, Platform, TextInput, Modal, Image, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { 
   Flame, 
   Calendar, 
@@ -19,7 +21,13 @@ import {
   MapPin,
   Phone,
   Save,
-  X
+  X,
+  Download,
+  Wallet,
+  Activity,
+  Truck,
+  RotateCcw,
+  Clock
 } from 'lucide-react-native';
 import { api } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -95,10 +103,57 @@ export default function DashboardScreen() {
       setStaffCode('');
       // Actualizar el estado de usuario global
       await updateUser(res.user);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Código incorrecto o error al actualizar.');
+    } catch (e: any) {
+      setErrorMsg(e.message || 'Error al validar el código.');
     } finally {
       setUpgrading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const token = await storage.getItem('authToken');
+      const dateParam = selectedDate === 'all' ? '' : `?fecha=${selectedDate}`;
+      const url = `http://137.131.245.249:5000/api/export${dateParam}`;
+
+      if (Platform.OS === 'web') {
+        window.open(url, '_blank');
+        return;
+      }
+
+      // @ts-ignore
+      const fileUri = `${FileSystem.documentDirectory}ventas_${selectedDate}.xlsx`;
+      const downloadResumed = FileSystem.createDownloadResumable(
+        url,
+        fileUri,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const result = await downloadResumed.downloadAsync();
+      if (result?.uri) {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(result.uri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: 'Exportar Ventas'
+          });
+        } else {
+          Alert.alert('Éxito', `Archivo guardado en: ${result.uri}`);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert('Error', 'No se pudo exportar el archivo.');
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Pendiente': return <Clock size={16} color="#EF4444" />;
+      case 'En preparación': return <RotateCcw size={16} color="#3B82F6" />;
+      case 'En envío': return <Truck size={16} color="#D97706" />;
+      case 'Entregado': return <CheckCircle size={16} color="#10B981" />;
+      default: return <Activity size={16} color="#64748B" />;
     }
   };
 
@@ -605,6 +660,55 @@ export default function DashboardScreen() {
             </View>
           </View>
 
+          {/* Distribución por Medios de Pago */}
+          <Text style={styles.sectionTitle}>Cobrado por Medio de Pago</Text>
+          <View style={{ gap: 12 }}>
+            {stats.por_medio_pago && Object.keys(stats.por_medio_pago).length > 0 ? (
+              Object.entries(stats.por_medio_pago).map(([method, amount]) => {
+                const total = stats.recaudacion_total || 1;
+                const percent = Math.round((amount / total) * 100);
+                return (
+                  <View key={method} style={styles.productCard}>
+                    <View style={[styles.iconWrapper, { backgroundColor: '#EEF2FF' }]}>
+                      <Wallet size={20} color="#4F46E5" />
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productValue}>{formatCurrency(amount)}</Text>
+                      <Text style={styles.productLabel}>{method} ({percent}%)</Text>
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 4 }}>No hay datos de pago registrados.</Text>
+            )}
+          </View>
+
+          {/* Pedidos por Estado */}
+          <Text style={styles.sectionTitle}>Pedidos por Estado</Text>
+          <View style={{ gap: 12 }}>
+            {stats.por_estado && Object.keys(stats.por_estado).length > 0 ? (
+              Object.entries(stats.por_estado).map(([state, count]) => {
+                const totalOrders = stats.total_pedidos || 1;
+                const percent = Math.round((count / totalOrders) * 100);
+                return (
+                  <View key={state} style={styles.productCard}>
+                    <View style={[styles.iconWrapper, { backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E2E8F0' }]}>
+                      {getStatusIcon(state)}
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productValue}>{count} {count === 1 ? 'pedido' : 'pedidos'}</Text>
+                      <Text style={styles.productLabel}>{state} ({percent}%)</Text>
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 4 }}>No hay pedidos registrados.</Text>
+            )}
+          </View>
+
+
           {/* Cantidades de Productos */}
           <Text style={styles.sectionTitle}>Cantidades del Evento</Text>
           <View style={{ gap: 12 }}>
@@ -648,7 +752,7 @@ export default function DashboardScreen() {
             </Pressable>
 
             <Pressable 
-              onPress={() => router.push('/admin/productos')}
+              onPress={handleExport}
               style={({ pressed }) => [
                 styles.actionButton, 
                 styles.actionSecondary, 
@@ -656,20 +760,8 @@ export default function DashboardScreen() {
                 { marginBottom: 8 }
               ]}
             >
-              <Text style={styles.actionButtonTextSecondary}>Productos</Text>
-              <ShoppingBag size={16} color="#4F46E5" style={{ marginLeft: 4 }} />
-            </Pressable>
-
-            <Pressable 
-              onPress={() => router.push('/envios')}
-              style={({ pressed }) => [
-                styles.actionButton, 
-                styles.actionSecondary, 
-                pressed && styles.buttonPressed
-              ]}
-            >
-              <Text style={styles.actionButtonTextSecondary}>Ver Reparto</Text>
-              <ChevronRight size={16} color="#4F46E5" style={{ marginLeft: 4 }} />
+              <Text style={styles.actionButtonTextSecondary}>Exportar a Excel</Text>
+              <Download size={16} color="#4F46E5" style={{ marginLeft: 4 }} />
             </Pressable>
           </View>
 

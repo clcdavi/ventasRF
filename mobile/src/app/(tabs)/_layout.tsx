@@ -9,7 +9,7 @@ export default function TabLayout() {
   const role = user?.rol || 'user';
 
   // Ocultar/mostrar pestañas dinámicamente según el rol
-  const showTab = (tabName: 'index' | 'pedidos' | 'stats' | 'envios') => {
+  const showTab = (tabName: 'index' | 'pedidos' | 'envios') => {
     if (role === 'admin') {
       return true;
     }
@@ -69,14 +69,7 @@ export default function TabLayout() {
             href: showTab('pedidos') ? undefined : null,
           }}
         />
-        <Tabs.Screen
-          name="stats"
-          options={{
-            title: 'Estadísticas',
-            tabBarIcon: ({ color }) => <PieChart size={20} color={color} strokeWidth={2.5} />,
-            href: showTab('stats') ? undefined : null,
-          }}
-        />
+
         <Tabs.Screen
           name="envios"
           options={{

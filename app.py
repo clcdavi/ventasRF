@@ -303,7 +303,40 @@ def actualizar_pagado(pedido_id):
     if models.update_pagado(pedido_id, data['pagado']):
         socketio.emit('pedidos_actualizados', {'mensaje': 'Pago actualizado'})
         return jsonify({'ok': True})
-    return jsonify({'error': 'Pedido no encontrado.'}), 404
+    return jsonify({'ok': True, 'pagado': pedido.pagado})
+
+@app.route('/api/pedidos/<int:pedido_id>/direccion', methods=['PUT'])
+def actualizar_direccion_pedido(pedido_id):
+    pedido = models.get_pedido_by_id(pedido_id)
+    if not pedido:
+        return jsonify({'error': 'Pedido no encontrado'}), 404
+
+    # Only allow updating direction if pending or confirmed
+    if pedido['estado'] not in ['Pendiente', 'Confirmado']:
+        return jsonify({'error': 'No se puede cambiar la dirección en este estado'}), 400
+
+    data = request.get_json() or {}
+    new_direccion = data.get('direccion', '').strip()
+    
+    if not new_direccion:
+        return jsonify({'error': 'La dirección no puede estar vacía'}), 400
+        
+    if '<' in new_direccion or '>' in new_direccion:
+        return jsonify({'error': 'La dirección contiene caracteres inválidos'}), 400
+
+    # We need to update the model. I will add a helper in models.py or just use SQLAlchemy here.
+    # It's better to do it cleanly.
+    p_obj = models.Pedido.query.get(pedido_id)
+    if p_obj:
+        import bleach
+        clean_dir = bleach.clean(new_direccion)
+        if clean_dir != p_obj.direccion:
+            p_obj.direccion = clean_dir
+            p_obj.direccion_editada = True
+            models.db.session.commit()
+            socketio.emit('pedidos_actualizados', {'mensaje': 'Dirección actualizada'})
+
+    return jsonify({'ok': True, 'direccion': new_direccion, 'direccion_editada': True})
 
 
 @app.route('/api/pedidos/<int:pedido_id>/repartidor', methods=['PUT'])

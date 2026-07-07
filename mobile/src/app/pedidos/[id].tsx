@@ -9,7 +9,8 @@ import {
   Alert, 
   Linking,
   Platform,
-  Modal
+  Modal,
+  TextInput
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -56,6 +57,8 @@ export default function PedidoDetailScreen() {
 
   // Modal state
   const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
+  const [editAddressModalVisible, setEditAddressModalVisible] = React.useState(false);
+  const [editAddressValue, setEditAddressValue] = React.useState('');
 
   React.useEffect(() => {
     return sound
@@ -113,6 +116,20 @@ export default function PedidoDetailScreen() {
     },
     onError: (err: any) => {
       Alert.alert('Error', err.message || 'No se pudo actualizar el estado.');
+    }
+  });
+
+  // Mutación para editar dirección
+  const editAddressMutation = useMutation({
+    mutationFn: (newAddress: string) => api.cambiarDireccion(pedidoId, newAddress),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      setEditAddressModalVisible(false);
+      Alert.alert('Éxito', 'Dirección actualizada correctamente.');
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err.message || 'No se pudo actualizar la dirección.');
     }
   });
 
@@ -254,6 +271,17 @@ export default function PedidoDetailScreen() {
                 </Pressable>
               )}
             </View>
+            {isCustomer && (pedido.estado === 'Pendiente' || pedido.estado === 'Confirmado') && pedido.tipo_entrega === 'envio' && (
+              <Pressable
+                onPress={() => {
+                  setEditAddressValue(pedido.direccion);
+                  setEditAddressModalVisible(true);
+                }}
+                style={styles.editAddressButton}
+              >
+                <Edit size={14} color="#4F46E5" />
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -393,6 +421,7 @@ export default function PedidoDetailScreen() {
 
       </ScrollView>
 
+      {/* Modal Confirmar Eliminar */}
       <Modal
         visible={deleteModalVisible}
         transparent
@@ -422,7 +451,54 @@ export default function PedidoDetailScreen() {
                   deleteMutation.mutate();
                 }}
               >
-                <Text style={styles.modalDeleteButtonText}>Eliminar</Text>
+                {deleteMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmDeleteButtonText}>Confirmar</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Editar Dirección */}
+      <Modal
+        visible={editAddressModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditAddressModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Dirección</Text>
+            <Text style={styles.modalSubtitle}>
+              Ingresa la nueva dirección de envío.
+            </Text>
+            <TextInput
+              style={styles.addressInput}
+              value={editAddressValue}
+              onChangeText={setEditAddressValue}
+              placeholder="Ej. San Martín 123"
+              placeholderTextColor="#94A3B8"
+            />
+            <View style={styles.modalButtonsRow}>
+              <Pressable
+                style={styles.modalCancelButton}
+                onPress={() => setEditAddressModalVisible(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalDeleteButton}
+                onPress={() => editAddressMutation.mutate(editAddressValue)}
+                disabled={editAddressMutation.isPending || !editAddressValue.trim() || editAddressValue === pedido.direccion}
+              >
+                {editAddressMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmDeleteButtonText}>Guardar</Text>
+                )}
               </Pressable>
             </View>
           </View>
@@ -900,5 +976,21 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontSize: 12,
     fontWeight: '600',
+  },
+  editAddressButton: {
+    padding: 6,
+    marginLeft: 8,
+    backgroundColor: '#EEF2FF',
+    borderRadius: 8,
+  },
+  addressInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: '#0F172A',
+    marginBottom: 20,
+    backgroundColor: '#F8FAFC',
   }
 });

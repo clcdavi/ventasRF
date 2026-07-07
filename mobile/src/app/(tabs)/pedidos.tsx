@@ -24,7 +24,9 @@ import {
   ShoppingBag,
   Phone,
   ChevronDown,
-  Calendar
+  Calendar,
+  Plus,
+  Truck
 } from 'lucide-react-native';
 import { api, PaginatedPedidos } from '../../services/api';
 import { Pedido } from '../../types';
@@ -175,8 +177,9 @@ export default function PedidosScreen() {
           </View>
           <View style={styles.cardDivider} />
           <View style={styles.cardBody}>
-            <Text style={styles.addressText} numberOfLines={1}>
+            <Text style={[styles.addressText, item.direccion_editada && { color: '#D97706', fontWeight: 'bold' }]} numberOfLines={1}>
               {item.tipo_entrega === 'envio' ? `🛵 Enviar a: ${item.direccion}` : '⛪ Retira en Iglesia'}
+              {item.direccion_editada ? ' (Editada)' : ''}
             </Text>
             <View style={styles.productsSummary}>
               {item.items?.map((prodItem, idx) => {
@@ -281,6 +284,23 @@ export default function PedidosScreen() {
         }}
         onClose={() => setIsDateDropdownOpen(false)}
       />
+
+      {!isCustomer && (
+        <View style={styles.actionButtonsContainer}>
+          <Pressable onPress={() => router.push('/pedidos/nuevo')} style={styles.actionBtnPrimary}>
+            <Plus size={16} color="#FFF" style={{ marginRight: 6 }} />
+            <Text style={styles.actionBtnPrimaryText}>Nuevo Pedido</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/admin/productos')} style={styles.actionBtnSecondary}>
+            <ShoppingBag size={16} color="#4F46E5" style={{ marginRight: 6 }} />
+            <Text style={styles.actionBtnSecondaryText}>Productos</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/envios')} style={styles.actionBtnSecondary}>
+            <Truck size={16} color="#4F46E5" style={{ marginRight: 6 }} />
+            <Text style={styles.actionBtnSecondaryText}>Ver Reparto</Text>
+          </Pressable>
+        </View>
+      )}
 
       {!isCustomer && (
         <View style={styles.filterContainer}>
@@ -658,5 +678,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     backgroundColor: '#F1F5F9',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    gap: 8,
+  },
+  actionBtnPrimary: {
+    flex: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    paddingVertical: 12,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  actionBtnPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  actionBtnSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF2FF',
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  actionBtnSecondaryText: {
+    color: '#4F46E5',
+    fontSize: 12,
+    fontWeight: '700',
   }
 });

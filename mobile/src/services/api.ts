@@ -117,6 +117,14 @@ export const api = {
     });
   },
 
+  // Cambiar dirección del pedido (solo Pendiente o Confirmado)
+  cambiarDireccion: (id: number, direccion: string) => {
+    return fetchJson<{ ok: boolean; direccion: string; direccion_editada: boolean }>(`/api/pedidos/${id}/direccion`, {
+      method: 'PUT',
+      body: JSON.stringify({ direccion }),
+    });
+  },
+
   // Asignar o cambiar repartidor
   cambiarRepartidor: (id: number, repartidor: string) => {
     return fetchJson<{ ok: boolean }>(`/api/pedidos/${id}/repartidor`, {

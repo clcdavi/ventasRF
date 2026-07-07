@@ -113,8 +113,15 @@ def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tip
             )
         )
     
-    query = query.order_by(Pedido.fecha_pedido.desc())
-    
+    if not fecha:
+        from datetime import date
+        today_str = date.today().isoformat()
+        is_today = case((func.date(Pedido.fecha_pedido) == today_str, 1), else_=2)
+        is_pending = case((Pedido.estado == 'Pendiente', 1), else_=2)
+        query = query.order_by(is_today, is_pending, Pedido.fecha_pedido.desc())
+    else:
+        query = query.order_by(Pedido.fecha_pedido.desc())
+        
     if page is not None and limit is not None:
         pagination = query.paginate(page=page, per_page=limit, error_out=False)
         return {
@@ -185,8 +192,8 @@ def update_pedido(pedido_id, data):
     p = Pedido.query.get(pedido_id)
     if not p:
         return False, None
-    if p.estado != 'Pendiente':
-        return False, 'not_pending'
+    if p.estado not in ('Pendiente', 'Confirmado'):
+        return False, 'not_pending_or_confirmed'
         
     monto_total = 0.0
     items = data.get('items', [])
@@ -206,7 +213,12 @@ def update_pedido(pedido_id, data):
     p.nombre_cliente = bleach.clean(data.get('nombre_cliente', p.nombre_cliente))
     p.telefono = bleach.clean(data.get('telefono', p.telefono))
     p.email = bleach.clean(data.get('email', p.email or ''))
-    p.direccion = bleach.clean(data.get('direccion', p.direccion))
+    
+    new_direccion = bleach.clean(data.get('direccion', p.direccion))
+    if new_direccion != p.direccion:
+        p.direccion = new_direccion
+        p.direccion_editada = True
+        
     p.medio_pago = bleach.clean(data.get('medio_pago', p.medio_pago))
     p.horario_entrega = bleach.clean(data.get('horario_entrega', p.horario_entrega or ''))
     p.notas = bleach.clean(data.get('notas', p.notas or ''))

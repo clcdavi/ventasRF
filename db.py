@@ -55,6 +55,7 @@ class Pedido(db.Model):
     repartidor = db.Column(db.Text, nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     fecha_actualizacion = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    direccion_editada = db.Column(db.Boolean, nullable=False, default=False)
     
     # Relaciones ORM
     items = db.relationship('PedidoItem', backref='pedido', lazy=True, cascade='all, delete-orphan')
