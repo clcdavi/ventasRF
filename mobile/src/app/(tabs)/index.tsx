@@ -158,12 +158,12 @@ export default function PedidosScreen() {
                 <Phone size={10} color="#94A3B8" style={{ marginRight: 4 }} />
                 <Text style={styles.clientPhone}>{item.telefono}</Text>
               </View>
-              {item.fecha_pedido && (
+              {typeof item.fecha_pedido === 'string' && item.fecha_pedido.trim() !== '' ? (
                 <View style={[styles.phoneRow, { marginTop: 2 }]}>
                   <Calendar size={10} color="#94A3B8" style={{ marginRight: 4 }} />
                   <Text style={styles.clientPhone}>{formatDateToLabel(item.fecha_pedido.substring(0, 10))}</Text>
                 </View>
-              )}
+              ) : null}
             </View>
             <Pressable 
               onPress={() => {

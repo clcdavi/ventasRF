@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { LayoutDashboard, ClipboardList, PieChart, Truck } from 'lucide-react-native';
-import { Platform, View, SafeAreaView } from 'react-native';
+import { Platform, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
 import { GlobalHeader } from '../../components/GlobalHeader';
 
