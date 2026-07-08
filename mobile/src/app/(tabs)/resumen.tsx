@@ -257,14 +257,14 @@ export default function DashboardScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContent}>
               <Pressable 
                 style={({ pressed }) => [styles.carouselCard, pressed && { opacity: 0.8 }]}
-                onPress={() => router.push('/')}
+                onPress={() => router.push('/pedidos/nuevo')}
               >
                 <Image source={require('../../../assets/images/locro.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Porción de Locro</Text>
               </Pressable>
               <Pressable 
                 style={({ pressed }) => [styles.carouselCard, pressed && { opacity: 0.8 }]}
-                onPress={() => router.push('/')}
+                onPress={() => router.push('/pedidos/nuevo')}
               >
                 <Image source={require('../../../assets/images/pastelitos.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Pastelitos por docena</Text>
@@ -281,7 +281,7 @@ export default function DashboardScreen() {
               </Text>
               
               <Pressable 
-                onPress={() => router.push('/')}
+                onPress={() => router.push('/pedidos/nuevo')}
                 style={({ pressed }) => [
                   styles.customerActionButton, 
                   pressed && styles.buttonPressed

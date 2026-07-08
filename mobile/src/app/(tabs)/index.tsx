@@ -466,6 +466,15 @@ export default function PedidosScreen() {
         }}
         onClose={() => setStatusModalVisible(false)}
       />
+
+      {isCustomer && (
+        <Pressable 
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+          onPress={() => router.push('/pedidos/nuevo')}
+        >
+          <Plus size={24} color="#FFFFFF" />
+        </Pressable>
+      )}
     </SafeAreaView>
   );
 }
@@ -922,5 +931,26 @@ const styles = StyleSheet.create({
     color: '#4F46E5',
     fontSize: 12,
     fontWeight: '700',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#4F46E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 999,
+  },
+  fabPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
   }
 });
