@@ -420,22 +420,24 @@ export default function PedidosScreen() {
             ) : null
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Info size={28} color="#94A3B8" style={{ marginBottom: 8 }} />
-              <Text style={styles.emptyText}>
-                {isCustomer 
-                  ? 'Aún no tienes pedidos registrados en tu historial.' 
-                  : 'No se encontraron pedidos con estos filtros.'}
-              </Text>
-              {isCustomer && (
-                <Pressable
-                  style={{ marginTop: 20, backgroundColor: '#4F46E5', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
-                  onPress={() => router.push('/pedidos/nuevo')}
-                >
-                  <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Hacer un Pedido</Text>
-                </Pressable>
-              )}
-            </View>
+            (!isCustomer || pedidos.length === 0) ? (
+              <View style={styles.emptyContainer}>
+                <Info size={28} color="#94A3B8" style={{ marginBottom: 8 }} />
+                <Text style={styles.emptyText}>
+                  {isCustomer 
+                    ? 'Aún no tienes pedidos registrados en tu historial.' 
+                    : 'No se encontraron pedidos con estos filtros.'}
+                </Text>
+                {isCustomer && (
+                  <Pressable
+                    style={{ marginTop: 20, backgroundColor: '#4F46E5', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
+                    onPress={() => router.push('/pedidos/nuevo')}
+                  >
+                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Hacer un Pedido</Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : null
           }
           onEndReached={() => {
             if (hasNextPage) {
