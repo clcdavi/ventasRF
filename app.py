@@ -155,6 +155,24 @@ def nuevo_pedido():
     return render_template('nuevo_pedido.html')
 
 
+@app.route('/m')
+@app.route('/m/<path:path>')
+def serve_mobile(path='index.html'):
+    # Servir la build exportada de Expo Web (mobile/dist)
+    dist_dir = os.path.join(os.path.dirname(__file__), 'mobile/dist')
+    if path != "" and os.path.exists(os.path.join(dist_dir, path)):
+        response = send_from_directory(dist_dir, path)
+        if path.endswith('.js') or path.endswith('.css'):
+            response.headers['Cache-Control'] = 'public, max-age=31536000'
+        return response
+    else:
+        response = send_from_directory(dist_dir, 'index.html')
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+
+
 @app.route('/pedidos/<int:pedido_id>/editar', methods=['GET'])
 def editar_pedido_form(pedido_id):
     pedido = models.get_pedido_by_id(pedido_id)
