@@ -77,7 +77,7 @@ export default function PerfilScreen() {
             try {
               await api.deleteAccount();
               await signOut();
-              router.replace('/auth');
+              router.replace('/(auth)/login');
             } catch (error) {
               setAlertConfig({ visible: true, title: 'Error', message: 'No se pudo eliminar la cuenta.', type: 'error' });
               setIsDeleting(false);
@@ -90,7 +90,7 @@ export default function PerfilScreen() {
 
   const handleLogout = async () => {
     await signOut();
-    router.replace('/auth');
+    router.replace('/(auth)/login');
   };
 
   return (
