@@ -620,6 +620,7 @@ def register_user():
     
     try:
         user = models.create_usuario(nombre, email, password_hash, rol)
+        socketio.emit('usuarios_actualizados', {'mensaje': 'Nuevo usuario registrado'})
         token = generar_token(user['id'])
         return jsonify({
             'token': token,
@@ -689,6 +690,7 @@ def google_login_user():
         user = models.get_usuario_by_email(email)
         if not user:
             user = models.create_usuario(nombre, email, 'google_oauth', 'user')
+            socketio.emit('usuarios_actualizados', {'mensaje': 'Nuevo usuario registrado vía Google'})
             
         token = generar_token(user['id'])
         return jsonify({
@@ -722,6 +724,13 @@ def get_current_user():
         return jsonify({'error': 'Usuario no encontrado.'}), 401
         
     return jsonify(current_user)
+
+
+@app.route('/api/usuarios', methods=['GET'])
+def get_all_usuarios():
+    # TODO: Add role check if needed, e.g. only 'admin' or 'staff'
+    usuarios = models.get_all_usuarios()
+    return jsonify(usuarios)
 
 
 @app.route('/api/auth/account', methods=['DELETE'])

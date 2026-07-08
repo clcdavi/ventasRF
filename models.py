@@ -441,6 +441,18 @@ def get_usuario_by_id(user_id):
         'created_at': _serialize(u.created_at)
     }
 
+def get_all_usuarios():
+    usuarios = Usuario.query.order_by(Usuario.created_at.desc()).all()
+    return [{
+        'id': u.id,
+        'nombre': u.nombre,
+        'email': u.email,
+        'rol': u.rol,
+        'telefono': u.telefono,
+        'direccion': u.direccion,
+        'created_at': _serialize(u.created_at)
+    } for u in usuarios]
+
 def update_usuario_rol(user_id, nuevo_rol):
     u = Usuario.query.get(user_id)
     if not u:
