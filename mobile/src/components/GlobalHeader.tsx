@@ -29,7 +29,17 @@ export function GlobalHeader() {
       </View>
       <View style={styles.headerActions}>
         <Pressable
-          onPress={() => setViewAsCustomer(!viewAsCustomer)}
+          onPress={() => {
+            const newValue = !viewAsCustomer;
+            setViewAsCustomer(newValue);
+            if (newValue) {
+              // Si cambia a vista cliente, lo llevamos a Inicio
+              require('expo-router').router.push('/(tabs)/resumen');
+            } else {
+              // Si cambia a vista gestión, lo llevamos a Pedidos
+              require('expo-router').router.push('/(tabs)/');
+            }
+          }}
           style={({ pressed }) => [
             styles.toggleViewButton,
             pressed && styles.buttonPressed,

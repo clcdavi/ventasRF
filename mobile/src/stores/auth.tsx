@@ -54,9 +54,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace('/(auth)/login');
     } else if (token && inAuthGroup) {
       // Si hay token y está en login/register, redirigir al panel principal
-      router.replace('/(tabs)');
+      const role = user?.rol || 'user';
+      const isRealCustomer = role === 'user' || role === 'customer' || viewAsCustomer;
+      if (isRealCustomer) {
+        router.replace('/(tabs)/resumen');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
-  }, [token, segments, isLoading, user]);
+  }, [token, segments, isLoading, user, viewAsCustomer]);
 
   async function checkAuth() {
     try {
