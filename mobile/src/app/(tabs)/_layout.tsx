@@ -1,16 +1,18 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { LayoutDashboard, ClipboardList, PieChart, Truck } from 'lucide-react-native';
-import { Platform, View } from 'react-native';
+import { Platform, View, SafeAreaView } from 'react-native';
 import { useAuth } from '../../stores/auth';
+import { GlobalHeader } from '../../components/GlobalHeader';
 
 export default function TabLayout() {
-  const { user } = useAuth();
+  const { user, viewAsCustomer } = useAuth();
   const role = user?.rol || 'user';
+  const isRealCustomer = role === 'user' || role === 'customer' || viewAsCustomer;
 
   // Ocultar/mostrar pestañas dinámicamente según el rol
   const showTab = (tabName: 'index' | 'resumen' | 'envios') => {
-    if (role === 'admin') {
+    if (!isRealCustomer) {
       return true;
     }
     // user / cliente
@@ -18,7 +20,9 @@ export default function TabLayout() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
+      <GlobalHeader />
+      <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: '#4F46E5', // Color índigo de la opción Soft
@@ -82,5 +86,6 @@ export default function TabLayout() {
 
       </Tabs>
     </View>
+    </SafeAreaView>
   );
 }

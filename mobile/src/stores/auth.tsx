@@ -24,6 +24,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (updatedUser: User) => Promise<void>;
+  viewAsCustomer: boolean;
+  setViewAsCustomer: (val: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewAsCustomer, setViewAsCustomer] = useState(false);
   const segments = useSegments();
   const router = useRouter();
 
@@ -198,7 +201,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signIn, signUp, signInWithGoogle, signOut, updateUser }}>
+    <AuthContext.Provider value={{
+        user,
+        token,
+        isLoading,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        updateUser,
+        viewAsCustomer,
+        setViewAsCustomer
+      }}>
       {children}
     </AuthContext.Provider>
   );

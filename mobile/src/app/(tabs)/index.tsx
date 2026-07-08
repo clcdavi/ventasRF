@@ -37,8 +37,8 @@ import { CustomDropdown } from '../../components/CustomDropdown';
 
 export default function PedidosScreen() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const isCustomer = user?.rol === 'customer' || user?.rol === 'user';
+  const { user, viewAsCustomer } = useAuth();
+  const isCustomer = user?.rol === 'customer' || user?.rol === 'user' || viewAsCustomer;
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');

@@ -39,8 +39,7 @@ import { formatDateToLabel } from '../../utils/date';
 import { CustomDropdown } from '../../components/CustomDropdown';
 
 export default function DashboardScreen() {
-  const { user, signOut, updateUser } = useAuth();
-  const [viewAsCustomer, setViewAsCustomer] = useState(false);
+  const { user, signOut, updateUser, viewAsCustomer } = useAuth();
   const isCustomer = user?.rol === 'user' || user?.rol === 'customer' || viewAsCustomer;
   const [selectedDate, setSelectedDate] = useState<string>('all');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -534,47 +533,6 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Encabezado Admin al estilo Cliente */}
-      <View style={styles.customerHeader}>
-        {/* Avatar con inicial */}
-        <View style={styles.customerAvatar}>
-          <Text style={styles.customerAvatarText}>{adminUserInitial}</Text>
-        </View>
-        {/* Saludo y marca */}
-        <View style={styles.customerHeaderText}>
-          <Text style={styles.customerHeaderGreeting}>¡Hola, {adminFirstName}! 👋</Text>
-          <Text style={styles.customerHeaderBrand}>Panel de Gestión</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => setViewAsCustomer(true)}
-            style={({ pressed }) => [
-              styles.toggleViewButton,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <Text style={styles.toggleViewButtonText}>Vista Cliente</Text>
-          </Pressable>
-          <Pressable 
-            onPress={() => refetch()} 
-            style={({ pressed }) => [
-              styles.refreshButton,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <RefreshCw size={18} color="#4A5568" />
-          </Pressable>
-          <Pressable 
-            onPress={() => signOut()} 
-            style={({ pressed }) => [
-              styles.refreshButton,
-              pressed && styles.buttonPressed
-            ]}
-          >
-            <LogOut size={18} color="#EF4444" />
-          </Pressable>
-        </View>
-      </View>
 
       {/* Selector de Evento / Fecha (Dropdown) */}
       <View style={styles.selectorContainer}>
