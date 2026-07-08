@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 95,
+    paddingBottom: 150,
   },
   cardOuter: {
     backgroundColor: '#F1F5F9',
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 100,
     right: 24,
     width: 56,
     height: 56,
