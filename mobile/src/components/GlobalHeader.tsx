@@ -37,7 +37,7 @@ export function GlobalHeader() {
           ]}
         >
           <Text style={[styles.toggleViewButtonText, viewAsCustomer && styles.toggleViewButtonTextActive]}>
-            Vista Cliente
+            {viewAsCustomer ? 'Vista Gestión' : 'Vista Cliente'}
           </Text>
         </Pressable>
         <Pressable 
