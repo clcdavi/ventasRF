@@ -42,7 +42,7 @@ export default function PedidosScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-05-25');
+  const [selectedDate, setSelectedDate] = useState<string>('all');
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [activeOrderForStatus, setActiveOrderForStatus] = useState<Pedido | null>(null);

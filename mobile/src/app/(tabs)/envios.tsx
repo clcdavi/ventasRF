@@ -21,7 +21,7 @@ import { formatDateToLabel } from '../../utils/date';
 
 export default function EnviosScreen() {
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState<string>('2026-05-25'); // Default 25 de Mayo
+  const [selectedDate, setSelectedDate] = useState<string>('all');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [promptConfig, setPromptConfig] = useState<{
     visible: boolean;
