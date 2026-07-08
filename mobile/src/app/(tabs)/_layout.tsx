@@ -9,12 +9,12 @@ export default function TabLayout() {
   const role = user?.rol || 'user';
 
   // Ocultar/mostrar pestañas dinámicamente según el rol
-  const showTab = (tabName: 'index' | 'pedidos' | 'envios') => {
+  const showTab = (tabName: 'index' | 'resumen' | 'envios') => {
     if (role === 'admin') {
       return true;
     }
     // user / cliente
-    return tabName === 'index' || tabName === 'pedidos';
+    return tabName === 'resumen' || tabName === 'index';
   };
 
   return (
@@ -56,17 +56,9 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: role === 'user' ? 'Inicio' : 'Resumen',
-            tabBarIcon: ({ color }) => <LayoutDashboard size={20} color={color} strokeWidth={2.5} />,
-            href: showTab('index') ? undefined : null,
-          }}
-        />
-        <Tabs.Screen
-          name="pedidos"
-          options={{
             title: role === 'user' ? 'Mis Pedidos' : 'Pedidos',
             tabBarIcon: ({ color }) => <ClipboardList size={20} color={color} strokeWidth={2.5} />,
-            href: showTab('pedidos') ? undefined : null,
+            href: showTab('index') ? undefined : null,
           }}
         />
 
@@ -78,6 +70,16 @@ export default function TabLayout() {
             href: showTab('envios') ? undefined : null,
           }}
         />
+
+        <Tabs.Screen
+          name="resumen"
+          options={{
+            title: role === 'user' ? 'Inicio' : 'Resumen',
+            tabBarIcon: ({ color }) => <LayoutDashboard size={20} color={color} strokeWidth={2.5} />,
+            href: showTab('resumen') ? undefined : null,
+          }}
+        />
+
       </Tabs>
     </View>
   );
