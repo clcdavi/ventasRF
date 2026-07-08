@@ -157,7 +157,19 @@ def create_pedido(data):
                 'precio_unitario': precio_unitario
             })
 
+    fecha_pedido_str = data.get('fecha_pedido')
+    fecha_pedido_obj = datetime.utcnow()
+    if fecha_pedido_str:
+        try:
+            if len(fecha_pedido_str) == 10:
+                fecha_pedido_obj = datetime.strptime(fecha_pedido_str, "%Y-%m-%d")
+            else:
+                fecha_pedido_obj = datetime.fromisoformat(fecha_pedido_str.replace("Z", "+00:00"))
+        except ValueError:
+            pass
+
     nuevo_pedido = Pedido(
+        fecha_pedido=fecha_pedido_obj,
         nombre_cliente=bleach.clean(data['nombre_cliente']),
         telefono=bleach.clean(data['telefono']),
         email=bleach.clean(data.get('email', '')),
@@ -214,6 +226,16 @@ def update_pedido(pedido_id, data):
     p.telefono = bleach.clean(data.get('telefono', p.telefono))
     p.email = bleach.clean(data.get('email', p.email or ''))
     
+    fecha_pedido_str = data.get('fecha_pedido')
+    if fecha_pedido_str:
+        try:
+            if len(fecha_pedido_str) == 10:
+                p.fecha_pedido = datetime.strptime(fecha_pedido_str, "%Y-%m-%d")
+            else:
+                p.fecha_pedido = datetime.fromisoformat(fecha_pedido_str.replace("Z", "+00:00"))
+        except ValueError:
+            pass
+
     new_direccion = bleach.clean(data.get('direccion', p.direccion))
     if new_direccion != p.direccion:
         p.direccion = new_direccion
