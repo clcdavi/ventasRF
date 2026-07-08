@@ -210,56 +210,6 @@ export default function DashboardScreen() {
     const firstName = user?.nombre?.split(' ')[0] ?? 'Cliente';
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        {/* ── Encabezado rediseñado — consistente con el login ── */}
-        <View style={styles.customerHeader}>
-          {/* Avatar con inicial */}
-          <View style={styles.customerAvatar}>
-            <Text style={styles.customerAvatarText}>{userInitial}</Text>
-          </View>
-          {/* Saludo y marca */}
-          <View style={styles.customerHeaderText}>
-            <Text style={styles.customerHeaderGreeting}>¡Hola, {firstName}! 👋</Text>
-            <Text style={styles.customerHeaderBrand}>Ventas RF</Text>
-          </View>
-          {/* Acciones */}
-          <View style={styles.headerActions}>
-            {user?.rol === 'admin' && (
-              <Pressable
-                onPress={() => setViewAsCustomer(false)}
-                style={({ pressed }) => [
-                  styles.toggleViewButton,
-                  pressed && styles.buttonPressed
-                ]}
-              >
-                <Text style={styles.toggleViewButtonText}>Gestión</Text>
-              </Pressable>
-            )}
-            <Pressable
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                refetchPedidos();
-              }}
-              style={({ pressed }) => [
-                styles.refreshButton,
-                pressed && styles.buttonPressed
-              ]}
-            >
-              <RefreshCw size={18} color="#4A5568" />
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                signOut();
-              }}
-              style={({ pressed }) => [
-                styles.refreshButton,
-                pressed && styles.buttonPressed
-              ]}
-            >
-              <LogOut size={18} color="#EF4444" />
-            </Pressable>
-          </View>
-        </View>
 
         <Modal visible={showTutorial} transparent animationType="fade">
           <View style={styles.tutorialOverlay}>
