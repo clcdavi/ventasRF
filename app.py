@@ -724,6 +724,28 @@ def get_current_user():
     return jsonify(current_user)
 
 
+@app.route('/api/auth/account', methods=['DELETE'])
+def delete_account():
+    token = None
+    if 'Authorization' in request.headers:
+        auth_header = request.headers['Authorization']
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            
+    if not token:
+        return jsonify({'error': 'Token de autenticación faltante.'}), 401
+        
+    user_id = obtener_usuario_desde_token(token)
+    if user_id in ('token_expirado', 'token_invalido'):
+        return jsonify({'error': 'Token inválido o expirado.'}), 401
+        
+    success = models.delete_usuario(user_id)
+    if not success:
+        return jsonify({'error': 'No se pudo eliminar la cuenta.'}), 500
+        
+    return jsonify({'message': 'Cuenta eliminada exitosamente.'}), 200
+
+
 @app.route('/api/auth/upgrade-role', methods=['POST'])
 def upgrade_role():
     """Permite a un usuario cambiar su rol ingresando un código de staff."""

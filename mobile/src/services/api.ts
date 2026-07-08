@@ -251,4 +251,11 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+
+  // Eliminar cuenta
+  deleteAccount: () => {
+    return fetchJson<{ message: string }>('/api/auth/account', {
+      method: 'DELETE',
+    });
+  },
 };

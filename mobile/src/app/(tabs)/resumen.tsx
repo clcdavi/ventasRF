@@ -204,10 +204,7 @@ export default function DashboardScreen() {
   };
 
   if (isCustomer) {
-    const activePedido = misPedidos?.find(p => p.estado !== 'Entregado');
     const isRealCustomer = user?.rol === 'user' || user?.rol === 'customer';
-    const userInitial = user?.nombre?.charAt(0)?.toUpperCase() ?? '?';
-    const firstName = user?.nombre?.split(' ')[0] ?? 'Cliente';
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
 
@@ -231,7 +228,7 @@ export default function DashboardScreen() {
           </View>
         </Modal>
 
-        {/* Modal de Alertas (Reemplazo de window.alert) */}
+        {/* Modal de Alertas */}
         <Modal visible={alertConfig.visible} transparent animationType="fade">
           <View style={styles.tutorialOverlay}>
             <View style={styles.tutorialContent}>
@@ -260,57 +257,20 @@ export default function DashboardScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContent}>
               <Pressable 
                 style={({ pressed }) => [styles.carouselCard, pressed && { opacity: 0.8 }]}
-                onPress={() => router.push('/pedidos/nuevo')}
+                onPress={() => router.push('/')}
               >
                 <Image source={require('../../../assets/images/locro.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Porción de Locro</Text>
               </Pressable>
               <Pressable 
                 style={({ pressed }) => [styles.carouselCard, pressed && { opacity: 0.8 }]}
-                onPress={() => router.push('/pedidos/nuevo')}
+                onPress={() => router.push('/')}
               >
                 <Image source={require('../../../assets/images/pastelitos.jpg')} style={styles.carouselImagePlaceholder} />
                 <Text style={styles.carouselTitle}>Pastelitos por docena</Text>
               </Pressable>
             </ScrollView>
           </View>
-
-          {(!user?.telefono) && (
-            <View style={styles.profileCard}>
-              <View style={styles.profileHeader}>
-                <Info size={20} color="#F59E0B" />
-                <Text style={styles.profileTitle}>Completa tu perfil</Text>
-              </View>
-              <Text style={styles.profileDesc}>Para agilizar tu entrega, guarda tu número de teléfono de contacto.</Text>
-              
-              <View style={styles.profileInputWrapper}>
-                <Phone size={16} color="#94A3B8" />
-                <TextInput
-                  style={styles.profileInput as any}
-                  placeholder="Teléfono"
-                  value={profileTelefono}
-                  onChangeText={setProfileTelefono}
-                  keyboardType="phone-pad"
-                  placeholderTextColor="#94A3B8"
-                />
-              </View>
-
-              <Pressable 
-                style={styles.profileSaveButton} 
-                onPress={handleUpdateProfile}
-                disabled={isUpdatingProfile}
-              >
-                {isUpdatingProfile ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <>
-                    <Save size={16} color="#FFF" />
-                    <Text style={styles.profileSaveText}>Guardar Datos</Text>
-                  </>
-                )}
-              </Pressable>
-            </View>
-          )}
 
           {/* Card: Realizar Pedido */}
           <View style={[styles.doubleBezelOuter, { marginTop: 20 }]}>
@@ -321,7 +281,7 @@ export default function DashboardScreen() {
               </Text>
               
               <Pressable 
-                onPress={() => router.push('/pedidos/nuevo')}
+                onPress={() => router.push('/')}
                 style={({ pressed }) => [
                   styles.customerActionButton, 
                   pressed && styles.buttonPressed
@@ -333,141 +293,6 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {isLoadingPedidos ? (
-            <View style={{ marginTop: 40, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color="#4F46E5" />
-              <Text style={{ marginTop: 10, color: '#64748B', fontSize: 13, fontWeight: '600' }}>Cargando tus pedidos...</Text>
-            </View>
-          ) : activePedido ? (
-            <View style={{ marginTop: 24 }}>
-              <Text style={styles.sectionTitle}>Seguimiento de tu Pedido Activo</Text>
-              <View style={styles.activeOrderCard}>
-                <View style={styles.activeOrderHeader}>
-                  <Text style={styles.activeOrderId}>Pedido #{activePedido.id}</Text>
-                  <Text style={styles.activeOrderDate}>Fecha: {activePedido.fecha_pedido}</Text>
-                </View>
-
-                {/* Progress bar */}
-                <View style={styles.progressTracker}>
-                  {['Pendiente', 'En preparación', 'En reparto', 'Entregado'].map((stage, idx) => {
-                    const stagesList = ['Pendiente', 'En preparación', 'En envío', 'Entregado'];
-                    const activeIndex = stagesList.indexOf(activePedido.estado);
-                    const isCompleted = idx <= activeIndex;
-                    const isCurrent = idx === activeIndex;
-
-                    return (
-                      <View key={stage} style={styles.progressStep}>
-                        <View style={styles.stepCircleWrapper}>
-                          {idx > 0 && (
-                            <View style={[styles.stepLine, idx <= activeIndex && styles.stepLineCompleted]} />
-                          )}
-                          <View style={[
-                            styles.stepCircle, 
-                            isCompleted && styles.stepCircleCompleted,
-                            isCurrent && styles.stepCircleCurrent
-                          ]}>
-                            {isCompleted && <Check size={10} color="#FFFFFF" strokeWidth={3} />}
-                          </View>
-                        </View>
-                        <Text style={[
-                          styles.stepLabel, 
-                          isCompleted && styles.stepLabelCompleted,
-                          isCurrent && styles.stepLabelCurrent
-                        ]}>
-                          {stage}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-
-                <View style={styles.activeOrderFooter}>
-                  <Text style={styles.activeOrderTotalLabel}>Total a pagar</Text>
-                  <Text style={styles.activeOrderTotalValue}>
-                    {formatCurrency(activePedido.monto_total)} ({activePedido.pagado ? 'Cobrado' : 'A cobrar'})
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.noActiveOrderContainer}>
-              <Info size={20} color="#94A3B8" style={{ marginRight: 8 }} />
-              <Text style={styles.noActiveOrderText}>No tienes pedidos activos en este momento.</Text>
-            </View>
-          )}
-
-          {/* Listado de pedidos anteriores */}
-          {misPedidos && misPedidos.length > (activePedido ? 1 : 0) && (
-            <View style={{ marginTop: 24 }}>
-              <Text style={styles.sectionTitle}>Historial de Pedidos</Text>
-              {misPedidos
-                .filter(p => p.id !== activePedido?.id)
-                .slice(0, 5)
-                .map((p) => (
-                  <Pressable
-                    key={p.id}
-                    onPress={() => router.push(`/pedidos/${p.id}`)}
-                    style={styles.historyCard}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.historyId}>Pedido #{p.id}</Text>
-                      <Text style={styles.historyDate}>{p.fecha_pedido}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.historyValue}>{formatCurrency(p.monto_total)}</Text>
-                      <Text style={[styles.historyStatus, { color: p.estado === 'Entregado' ? '#10B981' : '#EF4444' }]}>
-                        {p.estado}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-            </View>
-          )}
-
-          {/* Activar código Staff — link discreto para clientes reales */}
-          {isRealCustomer && !successMsg && (
-            <Pressable
-              onPress={() => setStaffCode(prev => prev ? '' : ' ')}
-              style={styles.staffToggleLink}
-            >
-              <Text style={styles.staffToggleLinkText}>¿Eres parte del staff? Activar acceso →</Text>
-            </Pressable>
-          )}
-
-          {/* Panel colapsable de código staff */}
-          {isRealCustomer && staffCode.trim().length >= 0 && staffCode !== '' && !successMsg && (
-            <View style={styles.staffCardDiscrete}>
-              <Text style={styles.staffTitle}>Acceso Staff</Text>
-              <View style={styles.staffInputRow}>
-                <TextInput
-                  style={styles.staffInput}
-                  placeholder="Código de Staff"
-                  placeholderTextColor="#94A3B8"
-                  value={staffCode.trim()}
-                  onChangeText={setStaffCode}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                />
-                <Pressable
-                  onPress={handleUpgradeRole}
-                  disabled={upgrading}
-                  style={({ pressed }) => [
-                    styles.staffButton,
-                    pressed && styles.buttonPressed,
-                    upgrading && { opacity: 0.7 }
-                  ]}
-                >
-                  {upgrading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.staffButtonText}>Activar</Text>
-                  )}
-                </Pressable>
-              </View>
-              {errorMsg ? <Text style={styles.staffErrorMsg}>{errorMsg}</Text> : null}
-            </View>
-          )}
-          {isRealCustomer && successMsg ? <Text style={[styles.staffSuccessMsg, { textAlign: 'center', marginVertical: 12 }]}>{successMsg}</Text> : null}
         </ScrollView>
       </SafeAreaView>
     );

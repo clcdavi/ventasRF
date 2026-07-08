@@ -20,6 +20,7 @@ export interface Pedido {
   pagado: boolean;
   tipo_entrega: string;
   repartidor?: string;
+  direccion_editada?: boolean;
 }
 
 export interface Stats {
@@ -64,4 +65,3 @@ export interface User {
   telefono?: string;
   direccion?: string;
 }
-

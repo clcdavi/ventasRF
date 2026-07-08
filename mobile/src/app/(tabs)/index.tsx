@@ -82,6 +82,7 @@ export default function PedidosScreen() {
     ? ((pedidosData?.pages[0] as unknown as PaginatedPedidos)?.data) || []
     : (pedidosData?.pages.flatMap(page => (page as PaginatedPedidos).data) || []);
 
+  const activePedido = isCustomer ? pedidos?.find((p: any) => p.estado !== 'Entregado') : null;
 
 
   const { data: fechasPedidos = [] } = useQuery({
@@ -345,13 +346,79 @@ export default function PedidosScreen() {
         </View>
       ) : (
         <FlatList
-          data={pedidos}
+          data={isCustomer ? pedidos.filter(p => p.id !== activePedido?.id) : pedidos}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderPedidoItem}
           contentContainerStyle={styles.listContent}
           onRefresh={refetch}
           refreshing={isRefetching}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            isCustomer ? (
+              <View style={{ marginBottom: 20 }}>
+                {activePedido ? (
+                  <View>
+                    <Text style={styles.sectionTitleTracker}>Seguimiento de tu Pedido Activo</Text>
+                    <View style={styles.activeOrderCard}>
+                      <View style={styles.activeOrderHeader}>
+                        <Text style={styles.activeOrderId}>Pedido #{activePedido.id}</Text>
+                        <Text style={styles.activeOrderDate}>Fecha: {activePedido.fecha_pedido}</Text>
+                      </View>
+
+                      {/* Progress bar */}
+                      <View style={styles.progressTracker}>
+                        {['Pendiente', 'En preparación', 'En reparto', 'Entregado'].map((stage, idx) => {
+                          const stagesList = ['Pendiente', 'En preparación', 'En envío', 'Entregado'];
+                          const activeIndex = stagesList.indexOf(activePedido.estado);
+                          const isCompleted = idx <= activeIndex;
+                          const isCurrent = idx === activeIndex;
+
+                          return (
+                            <View key={stage} style={styles.progressStep}>
+                              <View style={styles.stepCircleWrapper}>
+                                {idx > 0 && (
+                                  <View style={[styles.stepLine, idx <= activeIndex && styles.stepLineCompleted]} />
+                                )}
+                                <View style={[
+                                  styles.stepCircle, 
+                                  isCompleted && styles.stepCircleCompleted,
+                                  isCurrent && styles.stepCircleCurrent
+                                ]}>
+                                  {isCompleted && <Check size={10} color="#FFFFFF" strokeWidth={3} />}
+                                </View>
+                              </View>
+                              <Text style={[
+                                styles.stepLabel, 
+                                isCompleted && styles.stepLabelCompleted,
+                                isCurrent && styles.stepLabelCurrent
+                              ]}>
+                                {stage}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+
+                      <View style={styles.activeOrderFooter}>
+                        <Text style={styles.activeOrderTotalLabel}>Total a pagar</Text>
+                        <Text style={styles.activeOrderTotalValue}>
+                          {formatCurrency(activePedido.monto_total)} ({activePedido.pagado ? 'Cobrado' : 'A cobrar'})
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.noActiveOrderContainer}>
+                    <Info size={20} color="#94A3B8" style={{ marginRight: 8 }} />
+                    <Text style={styles.noActiveOrderText}>No tienes pedidos activos en este momento.</Text>
+                  </View>
+                )}
+                {pedidos && pedidos.length > (activePedido ? 1 : 0) && (
+                  <Text style={[styles.sectionTitleTracker, { marginTop: 24 }]}>Historial de Pedidos</Text>
+                )}
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Info size={28} color="#94A3B8" style={{ marginBottom: 8 }} />
@@ -407,6 +474,138 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  sectionTitleTracker: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  activeOrderCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 8,
+    ...Platform.select({
+      ios: { shadowColor: '#000000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8 },
+      android: { elevation: 1 },
+    }),
+  },
+  activeOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  activeOrderId: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  activeOrderDate: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  progressTracker: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginVertical: 12,
+  },
+  progressStep: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  stepCircleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  stepLine: {
+    position: 'absolute',
+    height: 3,
+    backgroundColor: '#E2E8F0',
+    left: '-50%',
+    right: '50%',
+    top: 8,
+    zIndex: -1,
+  },
+  stepLineCompleted: {
+    backgroundColor: '#4F46E5',
+  },
+  stepCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  stepCircleCompleted: {
+    backgroundColor: '#4F46E5',
+  },
+  stepCircleCurrent: {
+    backgroundColor: '#4F46E5',
+    borderWidth: 3,
+    borderColor: '#C7D2FE',
+  },
+  stepLabel: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 6,
+    textTransform: 'uppercase',
+  },
+  stepLabelCompleted: {
+    color: '#4F46E5',
+    fontWeight: '700',
+  },
+  stepLabelCurrent: {
+    color: '#4F46E5',
+    fontWeight: '800',
+  },
+  activeOrderFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 12,
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  activeOrderTotalLabel: {
+    fontSize: 9,
+    color: '#94A3B8',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  activeOrderTotalValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  noActiveOrderContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noActiveOrderText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
   },
   searchOuter: {
     paddingHorizontal: 20,

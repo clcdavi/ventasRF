@@ -457,3 +457,13 @@ def update_usuario_profile(user_id, data):
     if 'direccion' in data: u.direccion = data['direccion']
     db.session.commit()
     return True
+
+def delete_usuario(user_id):
+    u = Usuario.query.get(user_id)
+    if not u:
+        return False
+    # Unlink orders from this user to preserve the restaurant's order history
+    Pedido.query.filter_by(usuario_id=user_id).update({'usuario_id': None})
+    db.session.delete(u)
+    db.session.commit()
+    return True
