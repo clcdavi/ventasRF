@@ -82,6 +82,10 @@ export default function PedidosScreen() {
     ? ((pedidosData?.pages[0] as unknown as PaginatedPedidos)?.data) || []
     : (pedidosData?.pages.flatMap(page => (page as PaginatedPedidos).data) || []);
 
+  const totalPedidos = isCustomer
+    ? pedidos.length
+    : (pedidosData?.pages?.[0] as unknown as PaginatedPedidos)?.total ?? 0;
+
   const activePedido = isCustomer ? pedidos?.find((p: any) => p.estado !== 'Entregado') : null;
 
 
@@ -260,7 +264,16 @@ export default function PedidosScreen() {
       {!isCustomer && (
         <View style={styles.filterDateRow}>
           <View style={{ flex: 1, paddingHorizontal: 20, marginTop: 16 }}>
-            <Text style={styles.dateLabel}>Filtrar por evento</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={styles.dateLabel}>Filtrar por evento</Text>
+              {!isLoading && (
+                <View style={styles.counterBadge}>
+                  <Text style={styles.counterBadgeText}>
+                    {totalPedidos} pedido{totalPedidos !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+              )}
+            </View>
             <Pressable 
               style={styles.dropdownButton}
               onPress={() => setIsDateDropdownOpen(true)}
@@ -649,7 +662,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#64748B',
-    marginBottom: 8,
+  },
+  counterBadge: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  counterBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4F46E5',
   },
   dropdownButton: {
     flexDirection: 'row',
