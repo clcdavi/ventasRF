@@ -522,6 +522,13 @@ export default function DashboardScreen() {
                       <Text style={styles.productLabel}>Unidades de Membrillo</Text>
                     </View>
                   </View>
+                  <View style={styles.summaryBox}>
+                    <View style={styles.summaryContent}>
+                      <ShoppingBag size={18} color="#4F46E5" />
+                      <Text style={styles.summaryText}>Total a Producir</Text>
+                    </View>
+                    <Text style={styles.summaryValue}>{calculateDocenas(batata, membrillo)}</Text>
+                  </View>
                 </View>
               </>
             );
