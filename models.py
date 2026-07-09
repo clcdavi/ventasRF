@@ -89,7 +89,7 @@ def get_fechas_pedidos():
     query = db.session.query(func.date(Pedido.fecha_pedido).label('fecha'))\
         .group_by(func.date(Pedido.fecha_pedido))\
         .order_by(func.date(Pedido.fecha_pedido).desc())
-    return [row.fecha for row in query.all()]
+    return [str(row.fecha) for row in query.all()]
 
 def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None, pagado=None, usuario_id_filtro=None, page=None, limit=30):
     query = Pedido.query

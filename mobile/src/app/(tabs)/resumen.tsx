@@ -121,7 +121,23 @@ export default function DashboardScreen() {
       const url = `${API_BASE_URL.replace('/api', '')}/api/export${dateParam}`;
 
       if (Platform.OS === 'web') {
-        window.open(url, '_blank');
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+           throw new Error('Network response was not ok');
+        }
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `ventas_${selectedDate === 'all' ? 'todas' : selectedDate}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
         return;
       }
 
