@@ -91,12 +91,14 @@ def get_fechas_pedidos():
         .order_by(func.date(Pedido.fecha_pedido).desc())
     return [row.fecha for row in query.all()]
 
-def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None, usuario_id_filtro=None, page=None, limit=30):
+def get_all_pedidos(estado=None, medio_pago=None, fecha=None, busqueda=None, tipo_entrega=None, pagado=None, usuario_id_filtro=None, page=None, limit=30):
     query = Pedido.query
     if estado:
         query = query.filter_by(estado=estado)
     if medio_pago:
         query = query.filter_by(medio_pago=medio_pago)
+    if pagado is not None:
+        query = query.filter_by(pagado=pagado)
     if tipo_entrega:
         query = query.filter_by(tipo_entrega=tipo_entrega)
     if usuario_id_filtro is not None:
@@ -204,8 +206,6 @@ def update_pedido(pedido_id, data):
     p = Pedido.query.get(pedido_id)
     if not p:
         return False, None
-    if p.estado not in ('Pendiente', 'Confirmado'):
-        return False, 'not_pending_or_confirmed'
         
     monto_total = 0.0
     items = data.get('items', [])

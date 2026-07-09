@@ -32,6 +32,7 @@ import {
   EyeOff
 } from 'lucide-react-native';
 import { api } from '../../services/api';
+import { API_BASE_URL } from '../../services/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../stores/auth';
 import { storage } from '../../utils/storage';
@@ -41,7 +42,7 @@ import { CustomDropdown } from '../../components/CustomDropdown';
 export default function DashboardScreen() {
   const { user, signOut, updateUser, viewAsCustomer } = useAuth();
   const isCustomer = user?.rol === 'user' || user?.rol === 'customer' || viewAsCustomer;
-  const [selectedDate, setSelectedDate] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string>('2026-07-09');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
   
@@ -117,7 +118,7 @@ export default function DashboardScreen() {
     try {
       const token = await storage.getItem('authToken');
       const dateParam = selectedDate === 'all' ? '' : `?fecha=${selectedDate}`;
-      const url = `http://137.131.245.249:5000/api/export${dateParam}`;
+      const url = `${API_BASE_URL.replace('/api', '')}/api/export${dateParam}`;
 
       if (Platform.OS === 'web') {
         window.open(url, '_blank');

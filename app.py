@@ -277,12 +277,21 @@ def listar_pedidos():
     page = request.args.get('page', type=int)
     limit = request.args.get('limit', default=30, type=int)
 
+    pagado_str = request.args.get('pagado')
+    pagado = None
+    if pagado_str:
+        if pagado_str.lower() == 'true':
+            pagado = True
+        elif pagado_str.lower() == 'false':
+            pagado = False
+
     pedidos    = models.get_all_pedidos(
         estado=estado, 
         medio_pago=medio_pago, 
         fecha=fecha, 
         busqueda=busqueda, 
         tipo_entrega=tipo_entrega, 
+        pagado=pagado,
         usuario_id_filtro=usuario_id_filtro,
         page=page,
         limit=limit
@@ -481,8 +490,23 @@ def exportar_excel():
     fecha      = request.args.get('fecha') or None
     busqueda   = request.args.get('q') or None
     tipo_entrega = request.args.get('tipo_entrega') or None
-    pedidos    = models.get_all_pedidos(estado=estado, medio_pago=medio_pago, fecha=fecha, busqueda=busqueda, tipo_entrega=tipo_entrega)
+    
+    pagado_str = request.args.get('pagado')
+    pagado = None
+    if pagado_str:
+        if pagado_str.lower() == 'true':
+            pagado = True
+        elif pagado_str.lower() == 'false':
+            pagado = False
 
+    pedidos    = models.get_all_pedidos(
+        estado=estado, 
+        medio_pago=medio_pago, 
+        fecha=fecha, 
+        busqueda=busqueda, 
+        tipo_entrega=tipo_entrega,
+        pagado=pagado
+    )
     wb = Workbook()
     ws = wb.active
     ws.title = 'Pedidos'

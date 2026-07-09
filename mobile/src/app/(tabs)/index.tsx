@@ -42,9 +42,11 @@ export default function PedidosScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstado, setSelectedEstado] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string>('2026-07-09');
+  const [selectedPagado, setSelectedPagado] = useState<string>('all');
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+  const [isPagadoDropdownOpen, setIsPagadoDropdownOpen] = useState(false);
   const [activeOrderForStatus, setActiveOrderForStatus] = useState<Pedido | null>(null);
 
   const { 
@@ -64,6 +66,7 @@ export default function PedidosScreen() {
       }
       return api.getPedidos({
           estado: selectedEstado || undefined,
+          pagado: selectedPagado === 'all' ? undefined : selectedPagado === 'true',
           fecha: selectedDate === 'all' ? undefined : selectedDate,
           q: searchQuery || undefined,
           page: pageParam,
@@ -286,6 +289,19 @@ export default function PedidosScreen() {
               </Text>
               <ChevronDown size={18} color="#94A3B8" style={{ marginLeft: 'auto' }} />
             </Pressable>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 16 }}>
+              <Text style={styles.dateLabel}>Filtrar por pago</Text>
+            </View>
+            <Pressable 
+              style={styles.dropdownButton}
+              onPress={() => setIsPagadoDropdownOpen(true)}
+            >
+              <Text style={styles.dropdownButtonText}>
+                {selectedPagado === 'all' ? 'Todos' : (selectedPagado === 'true' ? 'Solo Cobrados' : 'Solo No Cobrados')}
+              </Text>
+              <ChevronDown size={18} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+            </Pressable>
           </View>
         </View>
       )}
@@ -303,6 +319,22 @@ export default function PedidosScreen() {
           setIsDateDropdownOpen(false);
         }}
         onClose={() => setIsDateDropdownOpen(false)}
+      />
+
+      <CustomDropdown
+        visible={isPagadoDropdownOpen}
+        title="Filtrar por pago"
+        options={[
+          { label: 'Todos', value: 'all' },
+          { label: 'Solo Cobrados', value: 'true' },
+          { label: 'Solo No Cobrados', value: 'false' },
+        ]}
+        selectedValue={selectedPagado}
+        onSelect={(val) => {
+          setSelectedPagado(val as string);
+          setIsPagadoDropdownOpen(false);
+        }}
+        onClose={() => setIsPagadoDropdownOpen(false)}
       />
 
       {!isCustomer && (

@@ -51,6 +51,7 @@ export const api = {
     fecha?: string;
     q?: string;
     tipo_entrega?: string;
+    pagado?: boolean | string;
     page?: number;
     limit?: number;
   }) => {
