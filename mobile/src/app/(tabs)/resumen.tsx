@@ -203,6 +203,32 @@ export default function DashboardScreen() {
     return `${docenas} doc. y ${unidades} un.`;
   };
 
+  const getPastelitosTotals = () => {
+    let batata = 0;
+    let membrillo = 0;
+
+    if (stats?.por_producto) {
+      Object.entries(stats.por_producto).forEach(([nombre, cantidad]: [string, any]) => {
+        const lowerName = nombre.toLowerCase();
+        if (lowerName.includes('pastelito')) {
+          let multiplier = 1;
+          if (lowerName.includes('docena') && !lowerName.includes('media')) multiplier = 12;
+          else if (lowerName.includes('media docena') || lowerName.includes('(x6)')) multiplier = 6;
+          
+          const totalUnits = Number(cantidad) * multiplier;
+
+          if (lowerName.includes('batata')) {
+            batata += totalUnits;
+          } else if (lowerName.includes('membrillo')) {
+            membrillo += totalUnits;
+          }
+        }
+      });
+    }
+
+    return { batata, membrillo, total: batata + membrillo };
+  };
+
   if (isCustomer) {
     const isRealCustomer = user?.rol === 'user' || user?.rol === 'customer';
     return (
@@ -469,6 +495,37 @@ export default function DashboardScreen() {
               <Text style={{ fontSize: 13, color: '#64748B', marginLeft: 4 }}>No hay pedidos registrados.</Text>
             )}
           </View>
+
+          {/* Total Pastelitos */}
+          {(() => {
+            const { batata, membrillo, total } = getPastelitosTotals();
+            if (total === 0) return null;
+            return (
+              <>
+                <Text style={styles.sectionTitle}>Total Pastelitos (Unidades)</Text>
+                <View style={{ gap: 12 }}>
+                  <View style={styles.productCard}>
+                    <View style={[styles.iconWrapper, { backgroundColor: '#FFFBEB' }]}>
+                      <ShoppingBag size={20} color="#D97706" />
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productValue}>{batata}</Text>
+                      <Text style={styles.productLabel}>Unidades de Batata</Text>
+                    </View>
+                  </View>
+                  <View style={styles.productCard}>
+                    <View style={[styles.iconWrapper, { backgroundColor: '#FEF2F2' }]}>
+                      <ShoppingBag size={20} color="#EF4444" />
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productValue}>{membrillo}</Text>
+                      <Text style={styles.productLabel}>Unidades de Membrillo</Text>
+                    </View>
+                  </View>
+                </View>
+              </>
+            );
+          })()}
 
           {/* Total Pedidos Registrados */}
           <View style={styles.summaryBox}>
