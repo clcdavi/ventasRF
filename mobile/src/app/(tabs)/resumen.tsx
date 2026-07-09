@@ -194,11 +194,11 @@ export default function DashboardScreen() {
     }).format(value);
   };
 
-  const calculateDocenas = (batata: number, membrillo: number) => {
-    const total = batata + membrillo;
+  const calculateDocenas = (total: number) => {
     if (total === 0) return '0';
     const docenas = Math.floor(total / 12);
     const unidades = total % 12;
+    if (docenas === 0) return `${unidades} un.`;
     if (unidades === 0) return `${docenas} doc.`;
     return `${docenas} doc. y ${unidades} un.`;
   };
@@ -524,10 +524,24 @@ export default function DashboardScreen() {
                   </View>
                   <View style={styles.summaryBox}>
                     <View style={styles.summaryContent}>
-                      <ShoppingBag size={18} color="#4F46E5" />
-                      <Text style={styles.summaryText}>Total a Producir</Text>
+                      <ShoppingBag size={18} color="#D97706" />
+                      <Text style={styles.summaryText}>A Producir Batata</Text>
                     </View>
-                    <Text style={styles.summaryValue}>{calculateDocenas(batata, membrillo)}</Text>
+                    <Text style={styles.summaryValue}>{calculateDocenas(batata)}</Text>
+                  </View>
+                  <View style={styles.summaryBox}>
+                    <View style={styles.summaryContent}>
+                      <ShoppingBag size={18} color="#EF4444" />
+                      <Text style={styles.summaryText}>A Producir Membrillo</Text>
+                    </View>
+                    <Text style={styles.summaryValue}>{calculateDocenas(membrillo)}</Text>
+                  </View>
+                  <View style={styles.summaryBox}>
+                    <View style={styles.summaryContent}>
+                      <ShoppingBag size={18} color="#4F46E5" />
+                      <Text style={styles.summaryText}>Total General a Producir</Text>
+                    </View>
+                    <Text style={styles.summaryValue}>{calculateDocenas(total)}</Text>
                   </View>
                 </View>
               </>
