@@ -349,6 +349,13 @@ export default function EditarPedidoScreen() {
             ))}
           </View>
 
+          {medioPago === 'transferencia' && (
+            <View style={{ backgroundColor: '#f9f9f8', padding: 12, borderRadius: 8, marginTop: 8, borderWidth: 1, borderColor: '#eaeaea', marginBottom: 10 }}>
+              <Text style={{ fontSize: 13, color: '#334155', marginBottom: 4 }}>Alias: <Text style={{fontWeight: 'bold'}}>buffet.rf</Text></Text>
+              <Text style={{ fontSize: 13, color: '#334155' }}>Comprobante al: <Text style={{fontWeight: 'bold'}}>11 6464-0003</Text></Text>
+            </View>
+          )}
+
           <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.toggleLabel}>¿Está cobrado?</Text>

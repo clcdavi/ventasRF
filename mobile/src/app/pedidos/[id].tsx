@@ -314,6 +314,13 @@ export default function PedidoDetailScreen() {
             <Text style={styles.paymentValue}>{pedido.medio_pago}</Text>
           </View>
 
+          {pedido.medio_pago?.toLowerCase() === 'transferencia' && (
+            <View style={{ backgroundColor: '#F1F5F9', padding: 12, borderRadius: 8, marginTop: 4, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' }}>
+              <Text style={{ fontSize: 12, color: '#334155', marginBottom: 4 }}>Alias: <Text style={{fontWeight: 'bold'}}>buffet.rf</Text></Text>
+              <Text style={{ fontSize: 12, color: '#334155' }}>Comprobante al: <Text style={{fontWeight: 'bold'}}>11 6464-0003</Text></Text>
+            </View>
+          )}
+
           <View style={styles.paymentInfoRow}>
             <Text style={styles.paymentLabel}>Monto total</Text>
             <Text style={styles.paymentTotalValue}>{formatCurrency(pedido.monto_total)}</Text>

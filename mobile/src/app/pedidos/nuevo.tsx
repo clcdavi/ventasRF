@@ -394,6 +394,13 @@ export default function NuevoPedidoScreen() {
             ))}
           </View>
 
+          {medioPago === 'transferencia' && (
+            <View style={{ backgroundColor: '#F1F5F9', padding: 12, borderRadius: 8, marginTop: 8, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 10 }}>
+              <Text style={{ fontSize: 13, color: '#334155', marginBottom: 4 }}>Alias: <Text style={{fontWeight: 'bold'}}>buffet.rf</Text></Text>
+              <Text style={{ fontSize: 13, color: '#334155' }}>Comprobante al: <Text style={{fontWeight: 'bold'}}>11 6464-0003</Text></Text>
+            </View>
+          )}
+
           {!isCustomer && (
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
