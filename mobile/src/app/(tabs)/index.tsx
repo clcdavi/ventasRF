@@ -58,7 +58,7 @@ export default function PedidosScreen() {
     hasNextPage,
     isFetchingNextPage
   } = useInfiniteQuery({
-    queryKey: ['pedidos', selectedEstado, selectedDate, searchQuery, isCustomer],
+    queryKey: ['pedidos', selectedEstado, selectedDate, selectedPagado, searchQuery, isCustomer],
     queryFn: async ({ pageParam = 1 }) => {
       if (isCustomer) {
         const data = await api.getMisPedidos();
