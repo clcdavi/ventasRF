@@ -5,7 +5,7 @@ import os
 import jwt
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, send_from_directory
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from config import (ESTADOS, MEDIOS_PAGO,
@@ -330,7 +330,7 @@ def actualizar_pagado(pedido_id):
     if models.update_pagado(pedido_id, data['pagado']):
         socketio.emit('pedidos_actualizados', {'mensaje': 'Pago actualizado'})
         return jsonify({'ok': True})
-    return jsonify({'ok': True, 'pagado': pedido.pagado})
+    return jsonify({'error': 'Pedido no encontrado.'}), 404
 
 @app.route('/api/pedidos/<int:pedido_id>/direccion', methods=['PUT'])
 def actualizar_direccion_pedido(pedido_id):
